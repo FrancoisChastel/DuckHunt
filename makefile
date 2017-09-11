@@ -1,5 +1,5 @@
 make:
-	std=c++11 *pp
+	g++ -std=c++11 *pp
 	mv a.out Skeleton
 	mkfifo player2server server2player
 
