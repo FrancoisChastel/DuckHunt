@@ -291,6 +291,7 @@ void GameServer::playerShoot(SPlayer &pPlayer)
 
     if (lBird >= 0 && lBird < (int)mBirds.size())
     {
+
         EMovement lTrueMovement = mBirds[lBird].getLastObservation();
         if (lMovement == lTrueMovement && lMovement != MOVE_DEAD)
         {

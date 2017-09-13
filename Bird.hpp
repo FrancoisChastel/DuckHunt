@@ -5,6 +5,8 @@
 
 #include <vector>
 #include <cstdlib>
+#include <iostream>
+#include <string>
 
 namespace ducks
 {
@@ -55,6 +57,64 @@ public:
     bool wasAlive(int i) const
     {
         return !wasDead(i);
+    }
+
+
+    std::string printObservations() const
+    {
+        std::string result = "";
+        for (EMovement movement : mSeq)
+        {
+            switch (movement)
+            {
+                case MOVE_UP_LEFT :
+                    result += "MOVE_UP_LEFT";
+                    break;
+
+                case MOVE_UP :
+                    result += "MOVE_UP";
+                    break;
+
+                case MOVE_UP_RIGHT :
+                    result += "MOVE_UP_RIGHT";
+                    break;
+
+                case MOVE_LEFT :
+                    result += "MOVE_LEFT";
+                    break;
+
+                case MOVE_STOPPED :
+                    result += "MOVE_STOPPED";
+                    break;
+
+                case MOVE_RIGHT :
+                    result += "MOVE_RIGHT";
+                    break;
+
+                case MOVE_DOWN_LEFT :
+                    result += "MOVE_DOWN_LEFT";
+                    break;
+
+                case MOVE_DOWN :
+                    result += "MOVE_DOWN";
+                    break;
+
+                case MOVE_DOWN_RIGHT :
+                    result += "MOVE_DOWN_RIGHT";
+                    break;
+
+                case MOVE_DEAD :
+                    result += "MOVE_DEAD";
+                    break;
+
+                default:
+                    break;
+            }
+
+            result += " / ";
+        }
+        result += "\r\n";
+        return result;
     }
 
     /**

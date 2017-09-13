@@ -1,0 +1,259 @@
+ EMovement Player::computeModel()
+    {
+        A = { { 0.6 , 0.1 , 0.1 , 0.1 , 0.1 },
+                                                { 0.1 , 0.6 , 0.1 , 0.1 , 0.1 },
+                                                { 0.1 , 0.1 , 0.6 , 0.1 , 0.1 },
+                                                { 0.1 , 0.1 , 0.1 , 0.6 , 0.1 },
+                                                { 0.1 , 0.1 , 0.1 , 0.1 , 0.6 } };
+
+        B = { { 0.125, 0.125, 0.125, 0.125, 0.11 , 0.11 , 0.11 , 0.11, 0.06 },
+                                                { 0.02 , 0.02 , 0.02 , 0.02 , 0.43 , 0.43 , 0.02 , 0.02, 0.02 },
+                                                { 0.02 , 0.02 , 0.02 , 0.02 , 0.43 , 0.43 , 0.02 , 0.02, 0.02 },
+                                                { 0.2  , 0.2  , 0.2  , 0.2  , 0.04 , 0.04 , 0.04 , 0.04, 0.04 },
+                                                { 0.125, 0.12 , 0.13 , 0.12 , 0.13 , 0.12 , 0.13 , 0.12, 0.05 }};
+
+        Pi = { 0.4 , 0.1 , 0.3 , 0.1 , 0.1 };
+
+        std::vector<double> c(NUMBER_OF_OBSERVATIONS, 0);
+
+        std::vector <std::vector <double> > alpha (NUMBER_OF_STATES, std::vector<double> (NUMBER_OF_OBSERVATIONS,0));
+        std::vector <std::vector <double> > beta  (NUMBER_OF_STATES, std::vector<double> (NUMBER_OF_OBSERVATIONS,0));
+        std::vector <std::vector <double> > gamma (NUMBER_OF_STATES, std::vector<double> (NUMBER_OF_OBSERVATIONS));
+        std::vector <double> PStates(NUMBER_OF_STATES);
+        std::vector <double> PMove(NUMBER_OF_EMISSIONS);
+
+
+        std::vector <std::vector <std::vector <double> > > digamma(NUMBER_OF_STATES, std::vector <std::vector <double> > (NUMBER_OF_STATES, std::vector <double> (NUMBER_OF_OBSERVATIONS)));
+
+        int i, j, t;
+        double numer, denom, logProb;
+        double oldLogProb = -INT32_MAX;
+        double maxProb=0;
+        unsigned short int nextMove;
+        int iters = 0;
+        int maxIters = INT8_MAX;
+
+        while(1)
+        {
+            c[0]=0;
+            for(i=0; i<NUMBER_OF_STATES; i++)
+            {
+                alpha[i][0]=Pi[i]*B[i][observations[0]];
+                c[0]+=alpha[i][0];
+            }
+            c[0]=1/c[0];
+            for(i=0; i < NUMBER_OF_STATES; i++)
+            {
+                alpha[i][0]=c[0]*alpha[i][0];
+            }
+            for(t=1; t<NUMBER_OF_OBSERVATIONS; t++)
+            {
+                c[t]=0;
+                for(i=0; i<NUMBER_OF_STATES; i++)
+                {
+                    alpha[i][t]=0;
+                    for(j=0; j<NUMBER_OF_STATES; j++)
+                    {
+                        alpha[i][t]+=alpha[j][t-1]*A[j][i];
+                    }
+                    alpha[i][t] *= B[i][observations[t]];
+                    c[t]+=alpha[i][t];
+                }
+                c[t]=1/c[t];
+                for(i=0;i<NUMBER_OF_STATES;i++)
+                {
+                    alpha[i][t]=c[t]*alpha[i][t];
+                }
+            }
+
+            for(i=0;i<NUMBER_OF_STATES;i++)
+            {
+                beta[i][NUMBER_OF_OBSERVATIONS-1]=c[NUMBER_OF_OBSERVATIONS-1];
+            }
+            for(t=NUMBER_OF_OBSERVATIONS-2; t>-1; t--)
+            {
+                for(i=0;i<NUMBER_OF_STATES;i++)
+                {
+                    beta[i][t]=0;
+                    for(j=0; j<NUMBER_OF_STATES; j++)
+                    {
+                        beta[i][t]+=(A[i][j]*B[j][observations[t+1]]*beta[j][t+1]);
+                    }
+                    beta[i][t]=c[t]*beta[i][t];
+                }
+            }
+
+            for(t=0; t<NUMBER_OF_OBSERVATIONS-1; t++)
+            {
+                denom=0;
+                for(i=0; i<NUMBER_OF_STATES;i++)
+                {
+                    for(j=0; j<NUMBER_OF_STATES; j++)
+                    {
+                        denom=denom+alpha[i][t]*A[i][j]*B[j][observations[t+1]]*beta[j][t+1];
+                    }
+                }
+                for(i=0; i<NUMBER_OF_STATES; i++)
+                {
+                    gamma[i][t]=0;
+                    for(j=0; j<NUMBER_OF_STATES; j++)
+                    {
+                        digamma[i][j][t]=(alpha[i][t]*A[i][j]*B[j][observations[t+1]]*beta[j][t+1])/denom;
+                        gamma[i][t]+=digamma[i][j][t];
+                    }
+                }
+            }
+
+            denom=0;
+            for(i=0; i<NUMBER_OF_STATES; i++)
+            {
+                denom+=alpha[i][NUMBER_OF_OBSERVATIONS-1];
+            }
+            for(i=0; i<NUMBER_OF_STATES; i++)
+            {
+                gamma[i][NUMBER_OF_OBSERVATIONS-1]=alpha[i][NUMBER_OF_OBSERVATIONS-1]/denom;
+            }
+
+
+            for(i=0; i<NUMBER_OF_STATES; i++)
+            {
+                Pi[i] = gamma[i][0];
+            }
+
+            for(i=0; i<NUMBER_OF_STATES; i++)
+            {
+                for(j=0; j<NUMBER_OF_STATES; j++)
+                {
+                    numer=0;
+                    denom=0;
+                    for(t=0; t<NUMBER_OF_OBSERVATIONS-1; t++)
+                    {
+                        numer=numer+digamma[i][j][t];
+                        denom=denom+gamma[i][t];
+                    }
+                    A[i][j]=numer/denom;
+                }
+            }
+
+            for(i=0; i<NUMBER_OF_STATES; i++)
+            {
+                for(j=0; j<NUMBER_OF_EMISSIONS; j++)
+                {
+                    numer=0;
+                    denom=0;
+                    for(t=0; t<NUMBER_OF_OBSERVATIONS; t++)
+                    {
+                        if(observations[t]==j)
+                        {
+                            numer=numer+gamma[i][t];
+                        }
+                        denom=denom+gamma[i][t];
+                    }
+                    B[i][j]=numer/denom;
+                }
+            }
+
+            logProb=0;
+
+            for(i=0;i<NUMBER_OF_OBSERVATIONS; i++)
+            {
+                logProb+=log(c[i]);
+            }
+            logProb=(-logProb);
+            iters++;
+
+            if(iters<maxIters && logProb>oldLogProb)
+            {
+                oldLogProb=logProb;
+            }
+            else
+            {
+                break;
+            }
+        }
+        for(i=0;i<NUMBER_OF_STATES; i++)
+        {
+            PStates[i]=0;
+            for(j=0; j<NUMBER_OF_STATES; j++)
+            {
+                PStates[i]+=gamma[j][NUMBER_OF_OBSERVATIONS-1]*A[j][i];
+            }
+            std::cerr << "for state ";
+            std::cerr << i;
+            std::cerr << " result is ";
+            std::cerr << PStates[i];
+            std::cerr << std::endl;
+        }
+        for(i=0; i<NUMBER_OF_EMISSIONS; i++)
+        {
+            PMove[i]=0;
+            for(j=0; j<NUMBER_OF_STATES; j++)
+            {
+                PMove[i]+=PStates[j]*B[j][i];
+            }
+
+            std::cerr << "Confidence for : ";
+            std::cerr << i;
+            std::cerr << " is : ";
+            std::cerr << PMove[i];
+            std::cerr << std::endl;
+
+            if(PMove[i]>maxProb)
+            {
+                maxProb=PMove[i];
+                nextMove=i;
+            }
+
+        }
+
+        if (NUMBER_OF_OBSERVATIONS + 10 < 100)
+        {
+            NUMBER_OF_OBSERVATIONS += 10;
+        }
+
+        EMovement thePrediction;
+
+        switch (nextMove)
+        {
+            case 4 : std::cerr << "MOVE_UP_LEFT";
+                thePrediction = EMovement::MOVE_UP_LEFT;
+                break;
+
+            case 0 : std::cerr << "MOVE_UP";
+                thePrediction = EMovement::MOVE_UP;
+                break;
+
+            case 5 : std::cerr << "MOVE_UP_RIGHT";
+                thePrediction = EMovement::MOVE_UP_RIGHT;
+                break;
+
+            case 2 : std::cerr << "MOVE_LEFT";
+                thePrediction = EMovement::MOVE_LEFT;
+                break;
+
+            case 8 : std::cerr << "MOVE_STOPPED";
+                thePrediction = EMovement::MOVE_STOPPED;
+                break;
+
+            case 3 : std::cerr << "MOVE_RIGHT";
+                thePrediction = EMovement::MOVE_RIGHT;
+                break;
+
+            case 6 : std::cerr << "MOVE_DOWN_LEFT";
+                thePrediction = EMovement::MOVE_DOWN_LEFT;
+                break;
+
+            case 1 : std::cerr << "MOVE_DOWN";
+                thePrediction = EMovement::MOVE_DOWN;
+                break;
+
+            case 7 : std::cerr << "MOVE_DOWN_RIGHT";
+                thePrediction = EMovement::MOVE_DOWN_RIGHT;
+                break;
+
+            default:
+                break;
+        }
+        std::cerr << std::endl;
+        return thePrediction;
+    }

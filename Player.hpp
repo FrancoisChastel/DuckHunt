@@ -4,7 +4,10 @@
 #include "Deadline.hpp"
 #include "GameState.hpp"
 #include "Action.hpp"
+#include "Constants.hpp"
+#include "Model.hpp"
 #include <vector>
+#include <string>
 
 namespace ducks
 {
@@ -68,6 +71,11 @@ public:
      * @param pDue time before which we must have returned
      */
     void reveal(const GameState &pState, const std::vector<ESpecies> &pSpecies, const Deadline &pDue);
+
+private:
+    Model model;
+    bool reset = true;
+
 };
 
 } /*namespace ducks*/
