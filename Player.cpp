@@ -16,27 +16,24 @@ namespace ducks {
          * This skeleton never shoots.
          */
 
-        if (reset)
+        if (!reset)
         {
             model.initializeRound(pState.getNumBirds());
-            reset = false;
+            reset = true;
         }
 
 
 
-        double bestPrediction = 0.60;
+        double bestPrediction = 0.50;
         int bestIndex = -1, index = -1;
         EMovement bestMovement ;
 
-        if (pState.getBird(0).getSeqLength() != 50)
-            return cDontShoot;
 
         for (std::pair <double, EMovement> thePrediction: model.predictMovements(pState))
         {
 
             if (thePrediction.first > bestPrediction)
             {
-
                 bestIndex = index;
                 bestMovement = thePrediction.second;
             }
@@ -66,7 +63,7 @@ namespace ducks {
         std::cerr << "GUESS" << std::endl;
 
         // called each round
-        reset = true;
+        reset = false;
         model.reset();
 
         std::vector <ESpecies> lGuesses(pState.getNumBirds(), SPECIES_UNKNOWN);

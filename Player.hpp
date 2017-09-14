@@ -74,7 +74,7 @@ public:
 
 private:
     Model model;
-    bool reset = true;
+    bool reset = false;
 
 };
 

@@ -70,7 +70,7 @@ namespace ducks {
         // Contract :
         //
 
-        void PrintMatrix(std::vector<std::vector<double>> aMatrix);
+        void PrintMatrix(std::vector<std::vector<int>> aMatrix);
 
 
         void reset();
@@ -101,7 +101,7 @@ namespace ducks {
 
     private:
 //-------------------------------------------------------- Private methods
-        ducks::EMovement intToMovement(short int aMovementIndex);
+        ducks::EMovement intToMovement(int aMovementIndex);
         // Parameters :
         //      - a bird index that define the bird which needed to be predicted
         // Manual :
@@ -109,7 +109,7 @@ namespace ducks {
         // Contract :
         //
 
-        short int movementToInt(EMovement aMovementType);
+        int movementToInt(EMovement aMovementType);
         // Parameters :
         //      - a bird index that define the bird which needed to be predicted
         // Manual :
@@ -138,8 +138,8 @@ namespace ducks {
 
     private:
 //----------------------------------------------------- Private attributes
-        ModelHolder modelHolder;
-        std::vector<std::vector<double> > observations;
+        std::vector<ModelHolder> modelsHolder;
+        std::vector<std::vector<int> > observations;
         HMM hmm;
 
 //-------------------------------------------------------- Friends classes

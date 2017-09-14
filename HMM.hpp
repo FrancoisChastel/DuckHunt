@@ -23,12 +23,11 @@
 //------------------------------------------------------------------------
 namespace ducks {
 
-
     struct ModelHolder {
         std::vector<std::vector<double>> A;
         std::vector<std::vector<double>> B;
         std::vector<double> Pi;
-        std::vector<std::vector<std::vector<double>>> gamma;
+        std::vector<std::vector<double>> gamma;
     };
 
     class HMM {
@@ -36,7 +35,16 @@ namespace ducks {
 
     public:
 //------------------------------------------------------- Publics methods
-        std::vector<double> optimumSequence(double anObservation, int aDuckIndex)
+        /**
+         * Duck Prediction part
+         */
+        std::
+
+        /**
+         * Duck movement part
+         */
+        // HMMO
+        pair<double, int> predictNextMove(ModelHolder anHolder, int numberOfObservations)
         // Parameters :
         //
         // Manual :
@@ -44,11 +52,43 @@ namespace ducks {
         // Contract :
         //
         {
+            std::vector<double> PMove (anHolder.A.size());
+            std::vector<double> PStates(anHolder.A.size());
 
-            return {1, 3, 4, 5};
+            for (int i = 0; i < anHolder.A.size(); i++)
+            {
+                PStates[i] = 0;
+
+                for (int j = 0; j < anHolder.A.size(); j++)
+                {
+                    PStates[i] += anHolder.gamma[j][numberOfObservations-1] * anHolder.A[j][i];
+                }
+            }
+
+            double maxProb = 0;
+            int nextMove = 0;
+
+            for (int i = 0; i < anHolder.B[0].size(); i++)
+            {
+                PMove[i] = 0;
+
+                for (int j = 0; j < anHolder.A.size(); j++)
+                {
+                    PMove[i] += PStates[j] * anHolder.B[j][i];
+                }
+
+                if (PMove[i] > maxProb)
+                {
+                    maxProb = PMove[i];
+                    nextMove = i;
+                }
+            }
+
+            return std::pair<double, int> (maxProb, nextMove);
         }
 
-        ModelHolder correctModel(ModelHolder anHolder, std::vector<double> observations)
+        // HMM2
+        std::vector<int> optimumSequence(ModelHolder anHolder, std::vector<int> observations)
         // Parameters :
         //
         // Manual :
@@ -56,380 +96,256 @@ namespace ducks {
         // Contract :
         //
         {
-            unsigned long NUMBER_OF_OBSERVATIONS = observations.size();
-            unsigned long NUMBER_OF_STATES = anHolder.A.size();
-            unsigned long NUMBER_OF_EMISSIONS = anHolder.B[0].size();
+            int aNumberOfStates = anHolder.A.size();
+            int aNumberOfEmissions = anHolder.B[0].size();
+            int aNumberOfObservations = observations.size();
 
-            std::vector<double> c(NUMBER_OF_OBSERVATIONS, 0);
+            std::vector <std::vector<double> > delta(aNumberOfStates, std::vector<double> (aNumberOfObservations));
+            std::vector <std::vector<int> >state(aNumberOfStates, std::vector<int>(aNumberOfObservations));
+            std::vector <double> d1(aNumberOfStates);
+            std::vector <int> solution(aNumberOfObservations);
 
-            std::vector<std::vector<double> > alpha(NUMBER_OF_STATES, std::vector<double>(NUMBER_OF_OBSERVATIONS, 0));
-            std::vector<std::vector<double> > beta(NUMBER_OF_STATES, std::vector<double>(NUMBER_OF_OBSERVATIONS, 0));
-            std::vector<std::vector<double> > gamma(NUMBER_OF_STATES, std::vector<double>(NUMBER_OF_OBSERVATIONS));
+            double s0;
 
-            std::vector<std::vector<std::vector<double> > > digamma(NUMBER_OF_STATES,
-                                                                    std::vector<std::vector<double> >(NUMBER_OF_STATES,
-                                                                                                      std::vector<double>(
-                                                                                                              NUMBER_OF_OBSERVATIONS)));
-            int i, j;
-            unsigned long t;
-            double numer, denom, logProb;
-            double oldLogProb = -INT32_MAX;
-            double maxProb = 0;
-            unsigned short int nextMove;
-            int iters = 0;
-            int maxIters = INT8_MAX;
+            for(int t=0; t < aNumberOfObservations; t++)
+            {
+                if(t==0)
+                {
+                    for(int i=0; i < aNumberOfStates; i++)
+                    {
+                        delta[i][t]=log(anHolder.Pi[i]*anHolder.B[i][observations[t]]);
+                        if(i==0)
+                        {
+                            s0=delta[i][t];
+                            state[i][t]=0;
+                        }
+                        else
+                        {
+                            if(delta[i][t]>s0)
+                            {
+                                s0=delta[i][t];
+                                state [i][t]=i;
+                            }
+                        }
 
-            while (1) {
-                // alpha-pass
-                c[0] = 0;
-
-                for (i = 0; i < NUMBER_OF_STATES; i++) {
-                    alpha[i][0] = anHolder.Pi[i] * anHolder.B[i][observations[0]];
-                    c[0] += alpha[i][0];
+                    }
                 }
-                c[0] = 1 / c[0];
-                for (i = 0; i < NUMBER_OF_STATES; i++) {
+                else
+                {
+                    for(int i=0; i<aNumberOfStates; i++)
+                    {
+                        for(int j=0; j<aNumberOfStates; j++)
+                        {
+                            d1[j]=(delta[j][t-1]+log(anHolder.A[j][i])+log(anHolder.B[i][observations[t]]));
+                            if(j==0)
+                            {
+                                delta[i][t]=d1[j];
+                                state[i][t]=j;
+                            }
+                            else
+                            {
+                                if (d1[j]>delta[i][t])
+                                {
+                                    delta[i][t]=d1[j];
+                                    state[i][t]=j;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            solution[aNumberOfObservations-1]=0;
+            double mx=delta[0][aNumberOfObservations-1];
+            for(int i=1; i<aNumberOfStates; i++)
+            {
+                if(delta[i][aNumberOfObservations-1]>mx)
+                {
+                    mx=delta[i][aNumberOfObservations-1];
+                    solution[aNumberOfObservations-1]=i;
+                }
+            }
+            for(int t=aNumberOfObservations-2; t>-1; t--)
+            {
+                solution[t]=state[solution[t+1]][t+1];
+            }
+
+            return solution;
+        }
+
+        // HMM4
+        ModelHolder correctModel(ModelHolder anHolder, std::vector<int> observations)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
+        {
+            int aNumberOfStates = anHolder.A.size();
+            int aNumberOfEmissions = anHolder.B[0].size();
+            int aNumberOfObservations = observations.size();
+
+
+            int maxIters = INT8_MAX;
+            int iters = 0;
+            double oldLogProb = INT16_MIN;
+            double numer;
+            double logProb;
+
+            double denom = 0;
+
+            std::vector<double> c(aNumberOfObservations, 0);
+
+            std::vector <std::vector <double> > alpha(aNumberOfStates, std::vector<double> (aNumberOfObservations, 0));
+            std::vector <std::vector <double> > beta(aNumberOfStates, std::vector<double> (aNumberOfObservations, 0));
+            std::vector <std::vector <double> > gamma(aNumberOfStates, std::vector<double> (aNumberOfObservations));
+            std::vector <std::vector <std::vector <double> > > digamma(aNumberOfStates, std::vector <std::vector <double> > (aNumberOfStates, std::vector <double> (aNumberOfObservations)));
+
+            while(1)
+            {
+
+                // Alpha-pass
+                c[0]=0;
+                for(int i=0; i<aNumberOfStates; i++)
+                {
+                    alpha[i][0] = anHolder.Pi[i] * anHolder.B[i][observations[0]];
+                    c[0]+=alpha[i][0];
+                }
+                c[0]=1/c[0];
+                for(int i=0; i<aNumberOfStates; i++)
+                {
                     alpha[i][0] = c[0] * alpha[i][0];
                 }
-                for (t = 1; t < NUMBER_OF_OBSERVATIONS; t++) {
-                    c[t] = 0;
-                    for (i = 0; i < NUMBER_OF_STATES; i++) {
-                        alpha[i][t] = 0;
-                        for (j = 0; j < NUMBER_OF_STATES; j++) {
-                            alpha[i][t] += alpha[j][t - 1] * anHolder.A[j][i];
+                for(int t=1; t<aNumberOfObservations; t++)
+                {
+                    c[t]=0;
+                    for(int i=0; i<aNumberOfStates; i++)
+                    {
+                        alpha[i][t]=0;
+                        for(int j=0; j<aNumberOfStates; j++)
+                        {
+                            alpha[i][t] += alpha[j][t-1]* anHolder.A[j][i];
                         }
                         alpha[i][t] *= anHolder.B[i][observations[t]];
-                        c[t] += alpha[i][t];
+                        c[t]+=alpha[i][t];
                     }
-                    c[t] = 1 / c[t];
-                    for (i = 0; i < NUMBER_OF_STATES; i++) {
-                        alpha[i][t] = c[t] * alpha[i][t];
+                    c[t]=1/c[t];
+                    for(int i=0;i<aNumberOfStates;i++)
+                    {
+                        alpha[i][t]=c[t]*alpha[i][t];
                     }
                 }
 
-                //beta-pass
-                for (i = 0; i < NUMBER_OF_STATES; i++) {
-                    beta[i][NUMBER_OF_OBSERVATIONS - 1] = c[NUMBER_OF_OBSERVATIONS - 1];
+                // Beta-Pass;
+                for(int i=0;i<aNumberOfStates;i++)
+                {
+                    beta[i][aNumberOfObservations-1]=c[aNumberOfObservations-1];
                 }
-                for (t = NUMBER_OF_OBSERVATIONS - 2; t > -1; t--) {
-                    for (i = 0; i < NUMBER_OF_STATES; i++) {
-                        beta[i][t] = 0;
-                        for (j = 0; j < NUMBER_OF_STATES; j++) {
-                            beta[i][t] += (anHolder.A[i][j] * anHolder.B[j][observations[t + 1]] * beta[j][t + 1]);
+
+                for(int t= aNumberOfObservations-2; t > -1; t--)
+                {
+                    for(int i=0;i<aNumberOfStates;i++)
+                    {
+                        beta[i][t]=0;
+                        for(int j=0; j<aNumberOfStates; j++)
+                        {
+                            beta[i][t]+=(anHolder.A[i][j]*anHolder.B[j][observations[t+1]]*beta[j][t+1]);
                         }
-                        beta[i][t] = c[t] * beta[i][t];
+                        beta[i][t]=c[t]*beta[i][t];
                     }
                 }
 
-                // gamma and digamma
-                for (t = 0; t < NUMBER_OF_OBSERVATIONS - 1; t++) {
-                    denom = 0;
-                    for (i = 0; i < NUMBER_OF_STATES; i++) {
-                        for (j = 0; j < NUMBER_OF_STATES; j++) {
-                            denom = denom + alpha[i][t] * anHolder.A[i][j] * anHolder.B[j][observations[t + 1]] *
-                                            beta[j][t + 1];
+                // Gamma di-gamma
+                for(int t=0; t<aNumberOfObservations-1; t++)
+                {
+                    denom=0;
+                    for(int i=0; i<aNumberOfStates;i++)
+                    {
+                        for(int j=0; j<aNumberOfStates; j++)
+                        {
+                            denom=denom+alpha[i][t]* anHolder.A[i][j] * anHolder.B[j][observations[t+1]]*beta[j][t+1];
                         }
                     }
-                    for (i = 0; i < NUMBER_OF_STATES; i++) {
-                        gamma[i][t] = 0;
-                        for (j = 0; j < NUMBER_OF_STATES; j++) {
-                            digamma[i][j][t] = (alpha[i][t] * anHolder.A[i][j] * anHolder.B[j][observations[t + 1]] *
-                                                beta[j][t + 1]) / denom;
-                            gamma[i][t] += digamma[i][j][t];
+                    for(int i=0; i<aNumberOfStates; i++)
+                    {
+                        gamma[i][t]=0;
+                        for(int j=0; j<aNumberOfStates; j++)
+                        {
+                            digamma[i][j][t]=(alpha[i][t]*anHolder.A[i][j]*anHolder.B[j][observations[t+1]]*beta[j][t+1])/denom;
+                            gamma[i][t]+=digamma[i][j][t];
                         }
                     }
                 }
 
-                denom = 0;
-                for (i = 0; i < NUMBER_OF_STATES; i++) {
-                    denom += alpha[i][NUMBER_OF_OBSERVATIONS - 1];
+                denom=0;
+                for(int i=0; i<aNumberOfStates; i++)
+                {
+                    denom+=alpha[i][aNumberOfObservations-1];
                 }
-                for (i = 0; i < NUMBER_OF_STATES; i++) {
-                    gamma[i][NUMBER_OF_OBSERVATIONS - 1] = alpha[i][NUMBER_OF_OBSERVATIONS - 1] / denom;
+                for(int i=0; i<aNumberOfStates; i++)
+                {
+                    gamma[i][aNumberOfObservations-1]=alpha[i][aNumberOfObservations-1]/denom;
                 }
 
-
-                // re-estimate pi
-                for (i = 0; i < NUMBER_OF_STATES; i++) {
+                // New PI
+                for(int i=0; i<aNumberOfStates; i++)
+                {
                     anHolder.Pi[i] = gamma[i][0];
                 }
 
-                // re-estimate A
-                for (i = 0; i < NUMBER_OF_STATES; i++) {
-                    for (j = 0; j < NUMBER_OF_STATES; j++) {
-                        numer = 0;
-                        denom = 0;
-                        for (t = 0; t < NUMBER_OF_OBSERVATIONS - 1; t++) {
-                            numer = numer + digamma[i][j][t];
-                            denom = denom + gamma[i][t];
+                // New A
+                for(int i=0; i<aNumberOfStates; i++)
+                {
+                    for(int j=0; j<aNumberOfStates; j++)
+                    {
+                        numer=0;
+                        denom=0;
+                        for(int t=0; t<aNumberOfObservations-1; t++)
+                        {
+                            numer=numer+digamma[i][j][t];
+                            denom=denom+gamma[i][t];
                         }
-                        anHolder.A[i][j] = numer / denom;
+                        anHolder.A[i][j]=numer/denom;
                     }
                 }
 
-                // re-estimate B
-                for (i = 0; i < NUMBER_OF_STATES; i++) {
-                    for (j = 0; j < NUMBER_OF_EMISSIONS; j++) {
-                        numer = 0;
-                        denom = 0;
-                        for (t = 0; t < NUMBER_OF_OBSERVATIONS; t++) {
-                            if (observations[t] == j) {
-                                numer = numer + gamma[i][t];
+                // New B
+                for(int i=0; i<aNumberOfStates; i++)
+                {
+                    for(int j=0; j<aNumberOfEmissions; j++)
+                    {
+                        numer=0;
+                        denom=0;
+                        for(int t=0; t<aNumberOfObservations; t++)
+                        {
+                            if(observations[t]==j)
+                            {
+                                numer=numer+gamma[i][t];
                             }
-                            denom = denom + gamma[i][t];
+                            denom=denom+gamma[i][t];
                         }
-                        anHolder.B[i][j] = numer / denom;
+                        anHolder.B[i][j]=numer/denom;
                     }
                 }
 
-                // Compute log[P (O | λ)]
-                logProb = 0;
-                for (i = 0; i < NUMBER_OF_OBSERVATIONS; i++) {
-                    logProb += log(c[i]);
+                logProb=0;
+                for(int i=0; i<aNumberOfObservations; i++)
+                {
+                    logProb+=log(c[i]);
                 }
-                logProb = (-logProb);
-
+                logProb=(-logProb);
                 iters++;
 
-                if (iters < maxIters && logProb > oldLogProb) {
-                    oldLogProb = logProb;
+                if(iters<maxIters && logProb>oldLogProb)
+                {
+                    oldLogProb=logProb;
                 }
-                else {
+                else
+                {
                     break;
                 }
-            }
 
-            return anHolder;
-        }
-
-
-        ModelHolder correctModelAverage(ModelHolder anHolder, std::vector<std::vector<double>> observations)
-        // Parameters :
-        //
-        // Manual :
-        //
-        // Contract :
-        //
-        {
-            unsigned long aNumberOfObsVectors = observations.size();
-            unsigned long aNumberOfStates = anHolder.A.size();
-            unsigned long aNumberOfEmissions = anHolder.B[0].size();
-            unsigned long aNumberOfObservations = observations[0].size();
-
-            std::vector<std::vector<std::vector<double> > > At(aNumberOfObsVectors,
-                                                               std::vector<std::vector<double> >(aNumberOfStates,
-                                                                                                 std::vector<double>(
-                                                                                                         aNumberOfStates)));
-            std::vector<std::vector<std::vector<double> > > Bt(aNumberOfObsVectors,
-                                                               std::vector<std::vector<double> >(aNumberOfStates,
-                                                                                                 std::vector<double>(
-                                                                                                         aNumberOfEmissions)));
-            std::vector<std::vector<double> > pit(aNumberOfObsVectors, std::vector<double>(aNumberOfStates));
-
-            int k;
-            PrintMatrix(anHolder.A);
-            PrintMatrix(anHolder.B);
-
-
-
-            for (k = 0; k < aNumberOfObsVectors; k++) {
-                pit[k] = anHolder.Pi;
-            }
-            for (k = 0; k < aNumberOfObsVectors; k++) {
-                At[k] = anHolder.A;
-            }
-
-
-            for (k = 0; k < aNumberOfObsVectors; k++) {
-                Bt[k] = anHolder.B;
-            }
-
-
-            std::vector<double> c(aNumberOfObservations, 0);
-            std::vector<std::vector<double> > alpha(aNumberOfStates, std::vector<double>(aNumberOfObservations, 0));
-            std::vector<std::vector<double> > beta(aNumberOfStates, std::vector<double>(aNumberOfObservations, 0));
-            std::vector<std::vector<std::vector<double> > > gamma(aNumberOfObsVectors,
-                                                                  std::vector<std::vector<double> >(aNumberOfStates,
-                                                                                                    std::vector<double>(
-                                                                                                            aNumberOfObservations)));
-            std::vector<std::vector<std::vector<double> > > digamma(aNumberOfStates,
-                                                                    std::vector<std::vector<double> >(aNumberOfStates,
-                                                                                                      std::vector<double>(
-                                                                                                              aNumberOfObservations)));
-            std::vector<double> P(aNumberOfObsVectors, 0);
-
-            int i, j;
-            unsigned long t;
-            double numer, denom, logProb;
-            double maxProb = 0;
-            double oldLogProb;
-            unsigned short int nextMove;
-            int iters = 0;
-            int maxIters = INT8_MAX;
-            double W = 0;
-
-            for (k = 0; k < aNumberOfObsVectors; k++) {
-                oldLogProb = -INT32_MAX;
-                iters = 0;
-                while (1) {
-                    c[0] = 0;
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        alpha[i][0] = pit[k][i] * Bt[k][i][observations[k][0]];
-                        c[0] += alpha[i][0];
-                    }
-                    c[0] = 1 / c[0];
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        alpha[i][0] = c[0] * alpha[i][0];
-                    }
-                    for (t = 1; t < aNumberOfObservations; t++) {
-                        c[t] = 0;
-                        for (i = 0; i < aNumberOfStates; i++) {
-                            alpha[i][t] = 0;
-                            for (j = 0; j < aNumberOfStates; j++) {
-                                alpha[i][t] += alpha[j][t - 1] * At[k][j][i];
-                            }
-                            alpha[i][t] *= Bt[k][i][observations[k][t]];
-                            c[t] += alpha[i][t];
-                        }
-                        c[t] = 1 / c[t];
-                        for (i = 0; i < aNumberOfStates; i++) {
-                            alpha[i][t] = c[t] * alpha[i][t];
-                        }
-                    }
-                    P[k] = 0;
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        P[k] += alpha[i][aNumberOfObservations - 1];
-                    }
-
-
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        beta[i][aNumberOfObservations - 1] = c[aNumberOfObservations - 1];
-                    }
-                    for (t = aNumberOfObservations - 2; t > -1; t--) {
-                        for (i = 0; i < aNumberOfStates; i++) {
-                            beta[i][t] = 0;
-                            for (j = 0; j < aNumberOfStates; j++) {
-                                beta[i][t] += (At[k][i][j] * Bt[k][j][observations[k][t + 1]] * beta[j][t + 1]);
-                            }
-                            beta[i][t] = c[t] * beta[i][t];
-                        }
-                    }
-
-                    for (t = 0; t < aNumberOfObservations - 1; t++) {
-                        denom = 0;
-                        for (i = 0; i < aNumberOfStates; i++) {
-                            for (j = 0; j < aNumberOfStates; j++) {
-                                denom = denom +
-                                        alpha[i][t] * At[k][i][j] * Bt[k][j][observations[k][t + 1]] * beta[j][t + 1];
-                            }
-                        }
-                        for (i = 0; i < aNumberOfStates; i++) {
-                            gamma[k][i][t] = 0;
-                            for (j = 0; j < aNumberOfStates; j++) {
-                                digamma[i][j][t] = (alpha[i][t] * At[k][i][j] * Bt[k][j][observations[k][t + 1]] *
-                                                    beta[j][t + 1]) / denom;
-                                gamma[k][i][t] += digamma[i][j][t];
-                            }
-                        }
-                    }
-
-                    denom = 0;
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        denom += alpha[i][aNumberOfObservations - 1];
-                    }
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        gamma[k][i][aNumberOfObservations - 1] = alpha[i][aNumberOfObservations - 1] / denom;
-                    }
-
-
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        pit[k][i] = gamma[k][i][0];
-                    }
-
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        for (j = 0; j < aNumberOfStates; j++) {
-                            numer = 0;
-                            denom = 0;
-                            for (t = 0; t < aNumberOfObservations - 1; t++) {
-                                numer = numer + digamma[i][j][t];
-                                denom = denom + gamma[k][i][t];
-                            }
-                            At[k][i][j] = numer / denom;
-                        }
-                    }
-
-                    for (i = 0; i < aNumberOfStates; i++) {
-                        for (j = 0; j < aNumberOfEmissions; j++) {
-                            numer = 0;
-                            denom = 0;
-                            for (t = 0; t < aNumberOfObservations; t++) {
-                                if (observations[k][t] == j) {
-                                    numer = numer + gamma[k][i][t];
-                                }
-                                denom = denom + gamma[k][i][t];
-                            }
-                            Bt[k][i][j] = numer / denom;
-                        }
-                    }
-
-                    logProb = 0;
-                    for (i = 0; i < aNumberOfObservations; i++) {
-                        logProb += log(c[i]);
-                    }
-                    logProb = (-logProb);
-                    iters++;
-
-
-                    if (iters < maxIters && logProb > oldLogProb) {
-                        oldLogProb = logProb;
-                    }
-                    else {
-
-                        break;
-                    }
-                }
-            }
-
-
-
-            for (i = 0; i < aNumberOfStates; i++) {
-                for (j = 0; j < aNumberOfStates; j++) {
-                    anHolder.A[i][j] = 0;
-                    W = 0;
-                    for (k = 0; k < aNumberOfObsVectors; k++) {
-                        anHolder.A[i][j] += ((1 / P[k]) * At[k][i][j]);
-                        W += (1 / P[k]);
-                    }
-                    anHolder.A[i][j] = anHolder.A[i][j] / W;
-                }
-            }
-
-
-            for (i = 0; i < aNumberOfStates; i++) {
-
-                for (j = 0; j < aNumberOfEmissions; j++) {
-
-                    anHolder.B[i][j] = 0;
-                    W = 0;
-                    for (k = 0; k < aNumberOfObsVectors; k++) {
-                        //HERE
-                        anHolder.B[i][j] += ((1 / P[k]) * Bt[k][i][j]);
-                        W += (1 / P[k]);
-                    }
-                    anHolder.B[i][j] = anHolder.B[i][j] / W;
-                }
-            }
-
-            for (i = 0; i < aNumberOfStates; i++) {
-                anHolder.Pi[i] = 0;
-                W = 0;
-                for (k = 0; k < aNumberOfObsVectors; k++) {
-                    //cout << pit[k][i] << " ";
-                    anHolder.Pi[i] += (1 / P[k]) * pit[k][i];
-                    W += (1 / P[k]);
-                }
-                //cout << "\n";
-                anHolder.Pi[i] = anHolder.Pi[i] / W;
             }
 
             anHolder.gamma = gamma;
@@ -437,14 +353,15 @@ namespace ducks {
             return anHolder;
         }
 
+
         void PrintMatrix(std::vector<std::vector<double>> aMatrix)
         {
-            for (int theCursorY = 0; theCursorY < aMatrix[0].size(); theCursorY++)
+            for (int theCursorX = 0; theCursorX < aMatrix.size(); theCursorX++)
             {
-                for (int theCursorX = 0; theCursorX < aMatrix.size(); theCursorX++)
+                for (int theCursorY = 0; theCursorY < aMatrix[theCursorX].size(); theCursorY++)
                 {
                     std::cerr << " ";
-                    std::cerr << aMatrix[theCursorY][theCursorX];
+                    std::cerr << aMatrix[theCursorX][theCursorY];
                 }
                 std::cerr << std::endl;
             }

@@ -33,9 +33,10 @@ namespace ducks {
     // Algorithm :
     //
     {
+        hmm.optimumSequence(modelsHolder[0], {1});
 
-        unsigned long NUMBER_OF_STATES = modelHolder.A.size();
-        unsigned long NUMBER_OF_EMISSIONS = modelHolder.B[0].size();
+        unsigned long NUMBER_OF_STATES = modelsHolder[0].A.size();
+        unsigned long NUMBER_OF_EMISSIONS = modelsHolder[0].B[0].size();
 
         std::vector<double> PStates(NUMBER_OF_STATES);
         std::vector<double> PMove(NUMBER_OF_EMISSIONS);
@@ -47,8 +48,8 @@ namespace ducks {
         for (int i = 0; i < NUMBER_OF_STATES; i++) {
             PStates[i] = 0;
             for (int j = 0; j < NUMBER_OF_STATES; j++) {
-                modelHolder.A[j][i];
-                PStates[i] += modelHolder.gamma[aBirdIndex][j][observations[aBirdIndex].size() - 1] * modelHolder.A[j][i];
+                modelsHolder[aBirdIndex].A[j][i];
+                PStates[i] += modelsHolder[aBirdIndex].gamma[j][observations[aBirdIndex].size() - 1] * modelsHolder[aBirdIndex].A[j][i];
             }
         }
 
@@ -57,7 +58,7 @@ namespace ducks {
             PMove[i] = 0;
 
             for (int j = 0; j < NUMBER_OF_STATES; j++) {
-                PMove[i] += PStates[j] * modelHolder.B[j][i];
+                PMove[i] += PStates[j] * modelsHolder[aBirdIndex].B[j][i];
             }
 
             if (PMove[i] > maxProb) {
@@ -70,14 +71,14 @@ namespace ducks {
         return std::pair<double,EMovement> (maxProb, intToMovement(nextMove));
     }//----- End of method
 
-    void Model::PrintMatrix(std::vector<std::vector<double>> aMatrix)
+    void Model::PrintMatrix(std::vector<std::vector<int>> aMatrix)
     {
-        for (int theCursorY = 0; theCursorY < aMatrix[0].size(); theCursorY++)
+        for (int theCursorX = 0; theCursorX < aMatrix.size(); theCursorX++)
         {
-            for (int theCursorX = 0; theCursorX < aMatrix.size(); theCursorX++)
+            for (int theCursorY = 0; theCursorY < aMatrix.size(); theCursorY++)
             {
                 std::cerr << " ";
-                std::cerr << aMatrix[theCursorY][theCursorX];
+                std::cerr << aMatrix[theCursorX][theCursorY];
             }
             std::cerr << std::endl;
         }
@@ -94,9 +95,9 @@ namespace ducks {
         return ESpecies::SPECIES_UNKNOWN ;
     }//----- End of method
 
-    void Model::addObservation(EMovement anObservation, int aDuckIndex)
+    void Model::addObservation(EMovement anObservation, int aBirdIndex)
     {
-        observations[aDuckIndex].push_back(anObservation);
+        observations[aBirdIndex].push_back(movementToInt(anObservation));
     }//----- End of method
 
 
@@ -108,31 +109,6 @@ namespace ducks {
     #ifdef MAP
         std::cout << "Call of constructor <Model>" << endl;
     #endif
-        std::vector<std::vector<double>> DEFAULT_A =
-                {{0.6, 0.1, 0.1, 0.1, 0.1},
-                 {0.1, 0.6, 0.1, 0.1, 0.1},
-                 {0.1, 0.1, 0.6, 0.1, 0.1},
-                 {0.1, 0.1, 0.1, 0.6, 0.1},
-                 {0.1, 0.1, 0.1, 0.1, 0.6}};
-
-        std::vector<std::vector<double>> DEFAULT_B =
-                {{0.125, 0.125, 0.125, 0.125, 0.11, 0.11, 0.11, 0.11, 0.06},
-                 {0.02,  0.02,  0.02,  0.02,  0.43, 0.43, 0.02, 0.02, 0.02},
-                 {0.02,  0.02,  0.02,  0.02,  0.43, 0.43, 0.02, 0.02, 0.02},
-                 {0.2,   0.2,   0.2,   0.2,   0.04, 0.04, 0.04, 0.04, 0.04},
-                 {0.125, 0.12,  0.13,  0.12,  0.13, 0.12, 0.13, 0.12, 0.05}};
-
-        std::vector<double> DEFAULT_PI = {0.4, 0.1, 0.3, 0.1, 0.1};
-
-        unsigned long NUMBER_OF_OBSERVATIONS_PER_ROUND = 10;
-        const int NUMBER_OF_STATES = 5;
-        const int NUMBER_OF_EMISSIONS = 9;
-        unsigned short int LEARNING_RATE = 1;
-
-
-        modelHolder.A = DEFAULT_A;
-        modelHolder.B = DEFAULT_B;
-        modelHolder.Pi = DEFAULT_PI;
 
     } //----- End of Model
 
@@ -154,7 +130,6 @@ namespace ducks {
             addObservation(pState.getBird(birdIndex).getLastObservation(), birdIndex);
         }
 
-
         train();
 
         for (size_t birdIndex = 0; birdIndex < pState.getNumBirds(); birdIndex++)
@@ -171,7 +146,7 @@ namespace ducks {
 //------------------------------------------------------ Protected methods
 
 //-------------------------------------------------------- Private methods
-    EMovement Model::intToMovement(short int aMovementIndex)
+    EMovement Model::intToMovement(int aMovementIndex)
     {
         EMovement theMovement;
         switch (aMovementIndex) {
@@ -199,7 +174,7 @@ namespace ducks {
         return theMovement;
     }//----- End of method
 
-    short int Model::movementToInt(EMovement aMovementType)
+    int Model::movementToInt(EMovement aMovementType)
     {
         short int theIndexMovement;
         switch (aMovementType)
@@ -233,35 +208,15 @@ namespace ducks {
 
     void Model::reset()
     {
-        std::vector<std::vector<double>> DEFAULT_A =
-                {{0.6, 0.1, 0.1, 0.1, 0.1},
-                 {0.1, 0.6, 0.1, 0.1, 0.1},
-                 {0.1, 0.1, 0.6, 0.1, 0.1},
-                 {0.1, 0.1, 0.1, 0.6, 0.1},
-                 {0.1, 0.1, 0.1, 0.1, 0.6}};
 
-        std::vector<std::vector<double>> DEFAULT_B =
-                {{0.125, 0.125, 0.125, 0.125, 0.11, 0.11, 0.11, 0.11, 0.06},
-                 {0.02,  0.02,  0.02,  0.02,  0.43, 0.43, 0.02, 0.02, 0.02},
-                 {0.02,  0.02,  0.02,  0.02,  0.43, 0.43, 0.02, 0.02, 0.02},
-                 {0.2,   0.2,   0.2,   0.2,   0.04, 0.04, 0.04, 0.04, 0.04},
-                 {0.125, 0.12,  0.13,  0.12,  0.13, 0.12, 0.13, 0.12, 0.05}};
-
-        std::vector<double> DEFAULT_PI = {0.4, 0.1, 0.3, 0.1, 0.1};
-
-        unsigned long NUMBER_OF_OBSERVATIONS_PER_ROUND = 10;
-        const int NUMBER_OF_STATES = 5;
-        const int NUMBER_OF_EMISSIONS = 9;
-        unsigned short int LEARNING_RATE = 1;
-
-        modelHolder.A = DEFAULT_A;
-        modelHolder.B = DEFAULT_B;
-        modelHolder.Pi = DEFAULT_PI;
     }//----- End of method
 
     void Model::train()
     {
-        modelHolder = hmm.correctModelAverage(modelHolder, observations);
+        for (size_t cursor = 0; cursor < observations.size(); cursor++)
+        {
+            modelsHolder[cursor] = hmm.correctModel(modelsHolder[cursor], observations[cursor]);
+        }
     }//----- End of method
 
     void Model::resetRound()
@@ -287,11 +242,16 @@ namespace ducks {
 
         std::vector<double> DEFAULT_PI = {0.4, 0.1, 0.3, 0.1, 0.1};
 
-        unsigned long NUMBER_OF_OBSERVATIONS_PER_ROUND = 10;
-        const int NUMBER_OF_STATES = 5;
-        const int NUMBER_OF_EMISSIONS = 9;
-        unsigned short int LEARNING_RATE = 1;
+        observations = std::vector<std::vector<int> > (numberOfBirds, std::vector<int>(0));
+        std::cerr << "initilize round";
+        modelsHolder = std::vector<ModelHolder>(numberOfBirds);
 
-        observations = std::vector<std::vector<double> > (numberOfBirds, std::vector<double>(NUMBER_OF_OBSERVATIONS_PER_ROUND));
+        for (size_t cursor = 0; cursor < observations.size(); cursor++)
+        {
+            modelsHolder[cursor].A = DEFAULT_A;
+            modelsHolder[cursor].B = DEFAULT_B;
+            modelsHolder[cursor].Pi = DEFAULT_PI;
+
+        }
     }//----- End of method
 }
