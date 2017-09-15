@@ -66,6 +66,8 @@ namespace ducks {
         reset = false;
         model.reset();
 
+
+
         std::vector <ESpecies> lGuesses(pState.getNumBirds(), SPECIES_UNKNOWN);
         return lGuesses;
     }

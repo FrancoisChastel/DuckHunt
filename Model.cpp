@@ -87,11 +87,16 @@ namespace ducks {
 
     }
 
-    ESpecies Model::predictSpecies(int aBirdIndex)
+    ESpecies Model::predictSpecies(std::vector<std::vector<int>> observation)
     // Algorithm :
     //
     {
-        //TODO
+        std::vector<ESpecies> thePredictions(observation.size());
+        for (int i=0; )
+        {
+
+        }
+
         return ESpecies::SPECIES_UNKNOWN ;
     }//----- End of method
 

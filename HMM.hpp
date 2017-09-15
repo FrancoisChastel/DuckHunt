@@ -14,6 +14,8 @@
 #include <math.h>
 #include <iostream>
 #include <pair>
+#include <cmath>
+#include <map>
 
 //------------------------------------------------------------- Constantes
 
@@ -57,6 +59,29 @@ namespace ducks {
             return result;
         }
 
+        std::vector<int> meanVector(std::vector<std::vector<int>> observations)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
+        {
+            std::vector<int> result(observations[0].size(), 0);
+
+            for (int j=0; j < observations[0]..size(); j++)
+            {
+                for (int i=0; i < observations.size(); i++)
+                {
+                    result[j] += observations[i][j];
+                }
+                result[j] /= observations.size();
+            }
+
+            return result;
+        }
+
+
         double euclidianDistance(std::vector<int> aVector, std::vector<int> anotherVector)
         // Parameters :
         //
@@ -65,13 +90,14 @@ namespace ducks {
         // Contract :
         //
         {
-            std::vector<int> result(anHolder.B[0].size(), 0);
+            double result = 0;
 
-            for
+            for (int cursor=0; cursor < aVector.size(); cursor)
+            {
+                result += std::pow(aVector[cursor] - anotherVector[cursor], 2);
+            }
 
-
-
-
+            return std::sqrt(result);
         }
 
         /**
