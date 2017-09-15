@@ -13,6 +13,7 @@
 #include <vector>
 #include <math.h>
 #include <iostream>
+#include <pair>
 
 //------------------------------------------------------------- Constantes
 
@@ -38,13 +39,46 @@ namespace ducks {
         /**
          * Duck Prediction part
          */
-        std::
+        std::vector<int> buildVectorMovement(ModelHolder anHolder, std::vector<int> observation)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
+        {
+            std::vector<int> result(anHolder.B[0].size(), 0);
+
+            for (int cursor=0; cursor < observation.size(); cursor++)
+            {
+                result[observation[cursor]] += 1;
+            }
+
+            return result;
+        }
+
+        double euclidianDistance(std::vector<int> aVector, std::vector<int> anotherVector)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
+        {
+            std::vector<int> result(anHolder.B[0].size(), 0);
+
+            for
+
+
+
+
+        }
 
         /**
          * Duck movement part
          */
         // HMMO
-        pair<double, int> predictNextMove(ModelHolder anHolder, int numberOfObservations)
+        std::pair<double, int> predictNextMove(ModelHolder anHolder, int numberOfObservations)
         // Parameters :
         //
         // Manual :
