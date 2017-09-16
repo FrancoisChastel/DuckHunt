@@ -27,7 +27,6 @@ namespace ducks {
 //----------------------------------------------------------------- PUBLIC
 //----------------------------------------------------- Friendly's methods
 
-
 //--------------------------------------------------------- Public methods
     std::pair<double, EMovement> Model::predictMovement(int aBirdIndex)
     // Algorithm :
@@ -87,17 +86,63 @@ namespace ducks {
 
     }
 
-    ESpecies Model::predictSpecies(std::vector<std::vector<int>> observation)
+    void Model::resetSpeciesPredictor()
     // Algorithm :
     //
     {
-        std::vector<ESpecies> thePredictions(observation.size());
-        for (int i=0; )
-        {
+
+    }
+
+    void Model::trainSpeciesPredictor(std::map<ESpecies,
+            std::vector<std::vector<EMovement>> > classifiedObservations,
+                                      std::vector<std::pair<std::vector<double>, ESpecies> > pastModel)
+    // Algorithm :
+    //
+    {
+        std::vector<std::pair<std::vector<double>, ESpecies> > theFinalCluster = pastModel;
+
+        for(auto const &theClassifiedObservation : classifiedObservations) {
+            std::vector<std::vector<double>> tmpVector;
+
+            for(std::vector<EMovement> theObservation : theClassifiedObservation.second)
+            {
+                std::vector<int> observation = movementsToInts(theObservation);
+
+                tmpVector.push_back(hmm.buildVectorMovement(9, observation));
+            }
+
+            theFinalCluster.push_back(std::make_pair(hmm.normalizeVector(hmm.meanVector(tmpVector)),
+                                                     theClassifiedObservation.first));
 
         }
+        std::cerr << "Number of species after learning : " << theFinalCluster.size() << std::endl;
 
-        return ESpecies::SPECIES_UNKNOWN ;
+
+        this->clusters = theFinalCluster;
+
+    }//----- End of method
+
+
+
+    ESpecies Model::guessSpeciesPredictor(std::vector<EMovement> anObservation)
+    {
+        std::vector<int> observation = movementsToInts(anObservation);
+
+        double bestPrediction = 0.66;
+        ESpecies bestSpecies = ESpecies::SPECIES_UNKNOWN;
+        std::vector<double> normalizedVector =  hmm.normalizeVector(hmm.buildVectorMovement(9, observation));
+
+        for(std::pair<std::vector<double>, ESpecies> cluster : clusters) {
+            double predictionConfidence = hmm.euclidianDistance(cluster.first, normalizedVector);
+            if (predictionConfidence <= bestPrediction)
+            {
+                bestSpecies = cluster.second;
+                bestPrediction = predictionConfidence;
+            }
+        }
+        std::cerr << "My guess is " << bestSpecies << " with confidence " << bestPrediction << std::endl;
+
+        return bestSpecies;
     }//----- End of method
 
     void Model::addObservation(EMovement anObservation, int aBirdIndex)
@@ -209,6 +254,30 @@ namespace ducks {
         }
 
         return theIndexMovement;
+    }//----- End of method
+
+    std::vector<ducks::EMovement> Model::intsToMovements(std::vector<int> aMovementIndex)
+    {
+        std::vector<ducks::EMovement> result(aMovementIndex.size());
+
+        for (int i=0; i < aMovementIndex.size(); i++)
+        {
+            result[i] = intToMovement(aMovementIndex[i]);
+        }
+
+        return result;
+    }//----- End of method
+
+    std::vector<int> Model::movementsToInts(std::vector<EMovement> aMovementType)
+    {
+        std::vector<int> result(aMovementType.size());
+
+        for (int i=0; i < aMovementType.size(); i++)
+        {
+            result[i] = movementToInt(aMovementType[i]);
+        }
+
+        return result;
     }//----- End of method
 
     void Model::reset()

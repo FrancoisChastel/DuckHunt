@@ -54,7 +54,16 @@ namespace ducks {
         // Contract :
         //
 
-        ducks::ESpecies predictSpecies(int aBirdIndex);
+        void trainSpeciesPredictor(std::map<ESpecies, std::vector<std::vector<EMovement >> > classifiedObservations,
+                                   std::vector<std::pair<std::vector<double>, ESpecies> > pastModel = {});
+        // Parameters :
+        //      - a bird index that define the bird which needed to be predicted
+        // Manual :
+        //
+        // Contract :
+        //
+
+        ESpecies guessSpeciesPredictor(std::vector<EMovement > anObservation);
         // Parameters :
         //      - a bird index that define the bird which needed to be predicted
         // Manual :
@@ -63,6 +72,14 @@ namespace ducks {
         //
 
         void initializeRound(size_t numberOfBirds);
+        // Parameters :
+        //      - a bird index that define the bird which needed to be predicted
+        // Manual :
+        //
+        // Contract :
+        //
+
+        void resetSpeciesPredictor();
         // Parameters :
         //      - a bird index that define the bird which needed to be predicted
         // Manual :
@@ -117,6 +134,22 @@ namespace ducks {
         // Contract :
         //
 
+        std::vector<ducks::EMovement> intsToMovements(std::vector<int> aMovementIndex);
+        // Parameters :
+        //      - a bird index that define the bird which needed to be predicted
+        // Manual :
+        //
+        // Contract :
+        //
+
+        std::vector<int> movementsToInts(std::vector<EMovement> aMovementType);
+        // Parameters :
+        //      - a bird index that define the bird which needed to be predicted
+        // Manual :
+        //
+        // Contract :
+        //
+
         void train();
         // Parameters :
         //      - a bird index that define the bird which needed to be predicted
@@ -132,6 +165,8 @@ namespace ducks {
         //
         // Contract :
         //
+
+        std::vector<std::pair<std::vector<double>, ESpecies> > clusters;
 
     protected:
 //--------------------------------------------------- Protected attributes

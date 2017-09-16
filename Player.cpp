@@ -15,7 +15,7 @@ namespace ducks {
          * Here you should write your clever algorithms to get the best action.
          * This skeleton never shoots.
          */
-
+        /**
         if (!reset)
         {
             model.initializeRound(pState.getNumBirds());
@@ -27,7 +27,6 @@ namespace ducks {
         double bestPrediction = 0.50;
         int bestIndex = -1, index = -1;
         EMovement bestMovement ;
-
 
         for (std::pair <double, EMovement> thePrediction: model.predictMovements(pState))
         {
@@ -47,10 +46,10 @@ namespace ducks {
         else
         {
             return Action(bestIndex, bestMovement);
-        }
+        }**/
 
         //This line would predict that bird 0 will move right and shoot at it
-        //return Action(0, MOVE_RIGHT);
+        return cDontShoot;
     }
 
     std::vector <ESpecies> Player::guess(const GameState &pState, const Deadline &pDue) {
@@ -60,15 +59,23 @@ namespace ducks {
          * This skeleton makes no guesses, better safe than sorry!
          */
 
-        std::cerr << "GUESS" << std::endl;
+        ESpecies DEFAULT_BIRD = SPECIES_PIGEON;
 
-        // called each round
-        reset = false;
-        model.reset();
+        std::vector <ESpecies> lGuesses(pState.getNumBirds(), DEFAULT_BIRD);
 
+        if(pState.getRound() != 0)
+        {
+            for (int i=0; i < pState.getNumBirds(); i++)
+            {
+                //if (pState.getBird(i).isAlive())
+                //{
+                    std::vector<EMovement> movements = buildVectorOfMovement(pState.getBird(i));
 
-
-        std::vector <ESpecies> lGuesses(pState.getNumBirds(), SPECIES_UNKNOWN);
+                    lGuesses[i] = model.guessSpeciesPredictor(movements);
+                    pastGuess = lGuesses;
+                //}
+            }
+        }
         return lGuesses;
     }
 
@@ -83,6 +90,59 @@ namespace ducks {
         /*
          * If you made any guesses, you will find out the true species of those birds in this function.
          */
+        std::map<ESpecies, std::vector<std::vector<EMovement>> > classifiedObservations = pastObservations;
+
+        for (int i = 0; i < pState.getNumBirds(); i++) {
+            if (pSpecies[i] != SPECIES_UNKNOWN /**&& pState.getBird(i).isAlive()**/)
+            {
+                std::vector<EMovement> movements = buildVectorOfMovement(pState.getBird(i));
+
+                if (classifiedObservations.find(pSpecies[i]) == classifiedObservations.end()) {
+                    classifiedObservations[pSpecies[i]] = {movements};
+                } else {
+                    classifiedObservations.find(pSpecies[i])->second.push_back(movements);
+                }
+            }
+        }
+
+        pastObservations = classifiedObservations;
+        model.trainSpeciesPredictor(classifiedObservations);
+
+        printGuess(this->pastGuess, pSpecies);
+
+    }
+
+    std::vector<EMovement> Player::buildVectorOfMovement(Bird aBird)
+    {
+        std::vector<EMovement> result(aBird.getSeqLength());
+
+        for (int i = 0; i < aBird.getSeqLength(); i++) {
+            result[i] = aBird.getObservation(i);
+        }
+
+        return result;
+    }
+
+
+    void Player::printGuess(std::vector<ESpecies> guess, std::vector<ESpecies> revealed)
+    {
+        int numberOfDifference = 0;
+        int numberOfPrediction = 0;
+        for (int i=0; i < guess.size(); i++)
+        {
+            std::cerr << " Obtain : " << revealed[i] << " but guessed : " << guess[i] << std::endl;
+
+            if (guess[i] != ESpecies::SPECIES_UNKNOWN)
+            {
+                numberOfPrediction++;
+                if (revealed[i] != guess[i] && guess[i] != ESpecies::SPECIES_UNKNOWN)
+                {
+                    numberOfDifference++;
+                }
+            }
+
+        }
+        std::cerr << numberOfDifference << " bad(s) predictions for " << numberOfPrediction << std::endl;
     }
 
 

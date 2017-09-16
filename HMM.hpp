@@ -13,7 +13,6 @@
 #include <vector>
 #include <math.h>
 #include <iostream>
-#include <pair>
 #include <cmath>
 #include <map>
 
@@ -41,7 +40,7 @@ namespace ducks {
         /**
          * Duck Prediction part
          */
-        std::vector<int> buildVectorMovement(ModelHolder anHolder, std::vector<int> observation)
+        std::vector<double> buildVectorMovement(int aNumberOfEmissions, std::vector<int> observation)
         // Parameters :
         //
         // Manual :
@@ -49,17 +48,28 @@ namespace ducks {
         // Contract :
         //
         {
-            std::vector<int> result(anHolder.B[0].size(), 0);
+            std::vector<double> result(aNumberOfEmissions, 0);
 
             for (int cursor=0; cursor < observation.size(); cursor++)
             {
-                result[observation[cursor]] += 1;
+                if (observation[cursor] >= 0)
+                {
+                    result[observation[cursor]] += 1;
+                }
             }
-
             return result;
         }
 
-        std::vector<int> meanVector(std::vector<std::vector<int>> observations)
+        double maxValue(std::vector<double> aVector)
+        {
+            double bestValue = INT16_MIN;
+            for (int value : aVector)
+                if (value > bestValue)
+                    bestValue = value;
+            return bestValue;
+        }
+
+        std::vector<double> normalizeVector(std::vector<double> aVector)
         // Parameters :
         //
         // Manual :
@@ -67,22 +77,44 @@ namespace ducks {
         // Contract :
         //
         {
-            std::vector<int> result(observations[0].size(), 0);
 
-            for (int j=0; j < observations[0]..size(); j++)
+            std::vector<double> theNormalizedVector(aVector.size(), 0);
+
+            double aMaxValue = maxValue(aVector);
+
+            for (int cursor=0; cursor < aVector.size(); cursor++)
+            {
+                theNormalizedVector[cursor] = aVector[cursor] / aMaxValue;
+            }
+
+            return theNormalizedVector;
+        }
+
+
+
+        std::vector<double> meanVector(std::vector<std::vector<double>> observations)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
+        {
+            std::vector<double> result(observations[0].size(), 0);
+
+            for (int j=0; j < observations[0].size(); j++)
             {
                 for (int i=0; i < observations.size(); i++)
                 {
                     result[j] += observations[i][j];
                 }
-                result[j] /= observations.size();
+                result[j] = (result[j]/observations.size());
             }
 
             return result;
         }
 
-
-        double euclidianDistance(std::vector<int> aVector, std::vector<int> anotherVector)
+        double euclidianDistance(std::vector<double> aVector, std::vector<double> anotherVector)
         // Parameters :
         //
         // Manual :
@@ -92,14 +124,37 @@ namespace ducks {
         {
             double result = 0;
 
-            for (int cursor=0; cursor < aVector.size(); cursor)
+            for (int cursor=0; cursor < aVector.size(); cursor++)
             {
                 result += std::pow(aVector[cursor] - anotherVector[cursor], 2);
             }
 
+            if (result == 0)
+            {
+                printVector(aVector);
+                printVector(anotherVector);
+                std::cerr << "Euclidean distance : " << result << std::endl;
+            }
+
+
             return std::sqrt(result);
         }
 
+        void printVector(std::vector<double> aVector)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
+        {
+            std::cerr << "[";
+            for (double element : aVector)
+            {
+                std::cerr << " " << element;
+            }
+            std::cerr << " ] " << std::endl;
+        }
         /**
          * Duck movement part
          */

@@ -72,10 +72,17 @@ public:
      */
     void reveal(const GameState &pState, const std::vector<ESpecies> &pSpecies, const Deadline &pDue);
 
-private:
-    Model model;
-    bool reset = false;
 
+    void printGuess(std::vector<ESpecies> guess, std::vector<ESpecies> revealed);
+
+private:
+
+    std::vector<EMovement> buildVectorOfMovement(Bird aBird);
+
+
+    std::map<ESpecies, std::vector<std::vector<EMovement>> > pastObservations = {};
+    Model model;
+    std::vector <ESpecies> pastGuess;
 };
 
 } /*namespace ducks*/
