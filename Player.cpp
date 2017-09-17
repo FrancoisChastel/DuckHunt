@@ -56,7 +56,7 @@ namespace ducks {
                         std::cerr << "bird: "<< i << "\n";
                         EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
                         ESpecies predictionSpecies = model.guessSpeciesPredictor(buildVectorOfMovement(theBird));
-                        if (prediction != EMovement::MOVE_DEAD) {
+                        if (prediction != EMovement::MOVE_DEAD && predictionSpecies != ESpecies::SPECIES_BLACK_STORK) {
                             lastShot=i;
                             return Action(i, prediction);
                         }
