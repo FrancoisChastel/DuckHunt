@@ -234,7 +234,7 @@ namespace ducks {
         }
 
         // HMMO
-        void predictNextMove(ModelHolder* anHolder, std::vector<double> gamma, int numberOfObservations, int* nextMove)
+        int predictNextMove(ModelHolder* anHolder, std::vector<double> gamma, int numberOfObservations)
         // Parameters :
         //
         // Manual :
@@ -242,10 +242,9 @@ namespace ducks {
         // Contract :
         //
         {
-            std::vector<double> PMove (anHolder->A.size());
+            std::vector<double> PMove (anHolder->B[0].size());
             std::vector<double> PStates(anHolder->A.size());
 
-            std::cerr << "A1" << std::endl;
             for (int i = 0; i < anHolder->A.size(); i++)
             {
                 PStates[i] = 0;
@@ -255,8 +254,8 @@ namespace ducks {
                     PStates[i] += gamma[j] * anHolder->A[j][i];
                 }
             }
-            double maxProb = 0.8;
-            std::cerr << "A2" << std::endl;
+            double maxProb = 0.25;
+            int nextMove = -1;
 
             for (int i = 0; i < anHolder->B[0].size(); i++)
             {
@@ -267,13 +266,16 @@ namespace ducks {
                     PMove[i] += PStates[j] * anHolder->B[j][i];
                 }
 
+                std::cerr << PMove[i] << " probility for " << i << std::endl;
+
                 if (PMove[i] > maxProb)
                 {
                     maxProb = PMove[i];
-                    *nextMove = i;
+                    nextMove = i;
                 }
             }
-            std::cerr << "A3" << std::endl;
+
+            return nextMove;
 
         }
 

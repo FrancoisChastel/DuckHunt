@@ -184,11 +184,7 @@ namespace ducks {
        int tmp_prediction = -1;
        std::vector<double> alpha =  hmm.AlphaPass1(aModel, observation);
        std::vector<double> gamma = hmm.findGamma(aModel->A.size(), alpha);
-       std::cerr << "Bonjour bonjour " << std::endl;
-       hmm.predictNextMove(aModel, gamma, observation.size(), &tmp_prediction);
-       std::cerr << "Bonjour bonsoir " << std::endl;
-
-       std::cerr << tmp_prediction << std::endl;
+       tmp_prediction = hmm.predictNextMove(aModel, gamma, observation.size());
 
        if (tmp_prediction != -1)
        {

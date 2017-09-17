@@ -15,7 +15,7 @@ namespace ducks {
          * Here you should write your clever algorithms to get the best action.
          * This skeleton never shoots.
          */
-        int MINIMUM_STEP = 97;
+        int MINIMUM_STEP = 80;
         if (pState.getNumBirds() == 0)
             return cDontShoot;
 
@@ -41,7 +41,6 @@ namespace ducks {
                 Bird theBird = pState.getBird(i);
                 if (theBird.isAlive()) {
                     EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
-                    std::cerr << "Bonsoir la famille "<< std::endl;
 
                     if (prediction != EMovement::MOVE_DEAD) {
                         return Action(i, prediction);
