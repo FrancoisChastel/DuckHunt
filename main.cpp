@@ -11,7 +11,7 @@ int main(int argc,char **argv)
 {
     // Parse parameters
     bool lCreateServer = false;
-    std::string lLoadFilename = "SouthEmissions.in";
+    std::string lLoadFilename = "NorthEmissions.in";
 
     for (int i = 1; i < argc; ++i)
     {

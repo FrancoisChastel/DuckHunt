@@ -29,7 +29,6 @@ namespace ducks {
         std::vector<std::vector<double>> A;
         std::vector<std::vector<double>> B;
         std::vector<double> Pi;
-        std::vector<std::vector<double>> gamma;
     };
 
     class HMM {
@@ -61,6 +60,12 @@ namespace ducks {
         }
 
         double maxValue(std::vector<double> aVector)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
         {
             double bestValue = INT16_MIN;
             for (int value : aVector)
@@ -155,11 +160,81 @@ namespace ducks {
             }
             std::cerr << " ] " << std::endl;
         }
+
         /**
          * Duck movement part
          */
+
+        std::vector<double> AlphaPass1(ModelHolder anHolder, std::vector<int> observations)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
+        {
+            int aNumberOfStates = anHolder.A.size();
+            int aNumberOfEmissions = anHolder.B[0].size();
+            int aNumberOfObservations = observations.size();
+            std::vector<double> c(aNumberOfObservations, 0);
+            std::vector <std::vector <double> > alpha(aNumberOfStates, std::vector<double> (aNumberOfObservations, 0));
+            std::vector<double> result(aNumberOfStates, 0);
+
+            c[0]=0;
+            for(int i=0; i<aNumberOfStates; i++)
+            {
+                alpha[i][0] = anHolder.Pi[i] * anHolder.B[i][observations[0]];
+                c[0]+=alpha[i][0];
+            }
+            c[0]=1/c[0];
+            for(int i=0; i<aNumberOfStates; i++)
+            {
+                alpha[i][0] = c[0] * alpha[i][0];
+            }
+            for(int t=1; t<aNumberOfObservations; t++)
+            {
+                c[t]=0;
+                for(int i=0; i<aNumberOfStates; i++)
+                {
+                    alpha[i][t]=0;
+                    for(int j=0; j<aNumberOfStates; j++)
+                    {
+                        alpha[i][t] += alpha[j][t-1]* anHolder.A[j][i];
+                    }
+                    alpha[i][t] *= anHolder.B[i][observations[t]];
+                    c[t]+=alpha[i][t];
+                }
+                c[t]=1/c[t];
+                for(int i=0;i<aNumberOfStates;i++)
+                {
+                    alpha[i][t]=c[t]*alpha[i][t];
+                    if(t==aNumberOfObservations-1)
+                    {
+                        result[i]=alpha[i][t];
+                    }
+                }
+            }
+            return result;
+        }
+
+        std::vector<double> findGamma(int aNumberOfStates, std::vector<double> alpha)
+        // Parameters :
+        //
+        // Manual :
+        //
+        // Contract :
+        //
+        {
+            double denom=0;
+            int i;
+            std::vector<double> gamma(aNumberOfStates, 0);
+            for(i=0; i<alpha.size(); i++)   denom+=alpha[i];
+            for(i=0; i<alpha.size(); i++)   gamma[i]=alpha[i]/denom;
+            return gamma;
+        }
+
         // HMMO
-        std::pair<double, int> predictNextMove(ModelHolder anHolder, int numberOfObservations)
+        int predictNextMove(ModelHolder anHolder, std::vector<double> gamma, int numberOfObservations)
         // Parameters :
         //
         // Manual :
@@ -176,12 +251,11 @@ namespace ducks {
 
                 for (int j = 0; j < anHolder.A.size(); j++)
                 {
-                    PStates[i] += anHolder.gamma[j][numberOfObservations-1] * anHolder.A[j][i];
+                    PStates[i] += gamma[j] * anHolder.A[j][i];
                 }
             }
-
-            double maxProb = 0;
-            int nextMove = 0;
+            double maxProb = 0.8;
+            int nextMove = -1;
 
             for (int i = 0; i < anHolder.B[0].size(); i++)
             {
@@ -199,7 +273,7 @@ namespace ducks {
                 }
             }
 
-            return std::pair<double, int> (maxProb, nextMove);
+            return nextMove;
         }
 
         // HMM2
@@ -462,8 +536,6 @@ namespace ducks {
                 }
 
             }
-
-            anHolder.gamma = gamma;
 
             return anHolder;
         }

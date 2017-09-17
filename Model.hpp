@@ -30,7 +30,7 @@ namespace ducks {
 
     public:
 //------------------------------------------------------- Publics methods
-        void addObservation(EMovement anObservation, int aDuckIndex);
+        EMovement guessMovement(ModelHolder model, std::vector<EMovement> observation);
         // Parameters :
         //
         // Manual :
@@ -38,7 +38,7 @@ namespace ducks {
         // Contract :
         //
 
-        std::vector<std::pair<double, EMovement>> predictMovements(const GameState &pState);
+        ModelHolder trainMovementsPredictor(std::vector<EMovement> observations);
         // Parameters :
         //
         // Manual :
@@ -150,22 +150,6 @@ namespace ducks {
         // Contract :
         //
 
-        void train();
-        // Parameters :
-        //      - a bird index that define the bird which needed to be predicted
-        // Manual :
-        //
-        // Contract :
-        //
-
-        void resetRound();
-        // Parameters :
-        //      - a bird index that define the bird which needed to be predicted
-        // Manual :
-        //
-        // Contract :
-        //
-
         std::vector<std::pair<std::vector<double>, ESpecies> > clusters;
 
     protected:
@@ -173,8 +157,6 @@ namespace ducks {
 
     private:
 //----------------------------------------------------- Private attributes
-        std::vector<ModelHolder> modelsHolder;
-        std::vector<std::vector<int> > observations;
         HMM hmm;
 
 //-------------------------------------------------------- Friends classes

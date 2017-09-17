@@ -32,6 +32,7 @@ namespace ducks {
     // Algorithm :
     //
     {
+        /**
         hmm.optimumSequence(modelsHolder[0], {1});
 
         unsigned long NUMBER_OF_STATES = modelsHolder[0].A.size();
@@ -65,9 +66,9 @@ namespace ducks {
                 nextMove = i;
             }
         }
+**/
 
-
-        return std::pair<double,EMovement> (maxProb, intToMovement(nextMove));
+        return std::pair<double,EMovement> (0, intToMovement(0));
     }//----- End of method
 
     void Model::PrintMatrix(std::vector<std::vector<int>> aMatrix)
@@ -93,6 +94,7 @@ namespace ducks {
 
     }
 
+
     void Model::trainSpeciesPredictor(std::map<ESpecies,
             std::vector<std::vector<EMovement>> > classifiedObservations,
                                       std::vector<std::pair<std::vector<double>, ESpecies> > pastModel)
@@ -115,7 +117,7 @@ namespace ducks {
                                                      theClassifiedObservation.first));
 
         }
-        std::cerr << "Number of species after learning : " << theFinalCluster.size() << std::endl;
+        //std::cerr << "Number of species after learning : " << theFinalCluster.size() << std::endl;
 
 
         this->clusters = theFinalCluster;
@@ -125,6 +127,8 @@ namespace ducks {
 
 
     ESpecies Model::guessSpeciesPredictor(std::vector<EMovement> anObservation)
+    // Algorithm :
+    //
     {
         std::vector<int> observation = movementsToInts(anObservation);
 
@@ -140,16 +144,67 @@ namespace ducks {
                 bestPrediction = predictionConfidence;
             }
         }
-        std::cerr << "My guess is " << bestSpecies << " with confidence " << bestPrediction << std::endl;
+        //std::cerr << "My guess is " << bestSpecies << " with confidence " << bestPrediction << std::endl;
 
         return bestSpecies;
     }//----- End of method
 
-    void Model::addObservation(EMovement anObservation, int aBirdIndex)
+
+    ModelHolder Model::trainMovementsPredictor(std::vector<EMovement> observations)
     {
-        observations[aBirdIndex].push_back(movementToInt(anObservation));
+
+            if (bestLocalShootProb > bestShootProb && bestLocalShoot != Constants.MOVE_RIGHT && bestLocalShoot != Constants.MOVE_LEFT) {
+                if (bestLocalShootProb >= ThresholdShootProb) {
+                    bestShootProb = bestLocalShootProb;
+                    bestShoot = bestLocalShoot;
+                    idBirdToShoot = idBird;
+                }
+            }
+        ModelHolder modelHolder;
+
+        std::vector<std::vector<double>> DEFAULT_A =
+                {{0.6, 0.1, 0.1, 0.1, 0.1},
+                 {0.1, 0.6, 0.1, 0.1, 0.1},
+                 {0.1, 0.1, 0.6, 0.1, 0.1},
+                 {0.1, 0.1, 0.1, 0.6, 0.1},
+                 {0.1, 0.1, 0.1, 0.1, 0.6}};
+
+        std::vector<std::vector<double>> DEFAULT_B =
+                {{0.125, 0.125, 0.125, 0.125, 0.11, 0.11, 0.11, 0.11, 0.06},
+                 {0.02,  0.02,  0.02,  0.02,  0.43, 0.43, 0.02, 0.02, 0.02},
+                 {0.02,  0.02,  0.02,  0.02,  0.43, 0.43, 0.02, 0.02, 0.02},
+                 {0.2,   0.2,   0.2,   0.2,   0.04, 0.04, 0.04, 0.04, 0.04},
+                 {0.125, 0.12,  0.13,  0.12,  0.13, 0.12, 0.13, 0.12, 0.05}};
+
+        std::vector<double> DEFAULT_PI = {0.4, 0.1, 0.3, 0.1, 0.1};
+
+
+        modelHolder.A = DEFAULT_A;
+        modelHolder.B = DEFAULT_B;
+        modelHolder.Pi = DEFAULT_PI;
+        modelHolder = hmm.correctModel(modelHolder, movementsToInts(observations));
+        int nextMove = hmm.predictNextMove(modelHolder, hmm.findGamma(modelHolder.A.size(),  hmm.AlphaPass1(modelHolder, observations)));
+
+        //TODO : double[] nextObsDist = newHMMOfBirdSpecies.NextObsDistribution(currentPi_t);
+
+
+        return hmm.correctModel(modelHolder, movementsToInts(observations));
     }//----- End of method
 
+
+   EMovement Model::guessMovement(ModelHolder aModel, std::vector<EMovement> anObservation)
+   {
+       std::vector<int> observation = movementsToInts(anObservation);
+       int tmp_prediction = -1;
+       std::vector<double> gamma = hmm.findGamma(aModel.A.size(), hmm.AlphaPass1(aModel, observation));
+       tmp_prediction = hmm.predictNextMove(aModel, gamma, observation.size());
+
+       if (tmp_prediction != -1)
+       {
+           return intToMovement(tmp_prediction);
+       }
+       return EMovement::MOVE_DEAD;
+   }//----- End of method
 
     //----------------------------------------- Constructors - destructor
     Model::Model()
@@ -172,24 +227,6 @@ namespace ducks {
     #endif
     } //----- End of Model
 
-    std::vector<std::pair<double, EMovement>> Model::predictMovements(const GameState &pState)
-    {
-        std::vector<std::pair<double, EMovement>> predictions(pState.getNumBirds());
-        for (size_t birdIndex = 0; birdIndex < pState.getNumBirds(); birdIndex++)
-        {
-            addObservation(pState.getBird(birdIndex).getLastObservation(), birdIndex);
-        }
-
-        train();
-
-        for (size_t birdIndex = 0; birdIndex < pState.getNumBirds(); birdIndex++)
-        {
-            //HERE
-            predictions[birdIndex] = predictMovement(birdIndex);
-        }
-
-        return predictions;
-    }
 
 //---------------------------------------------------------------- PRIVATE
 
@@ -218,7 +255,7 @@ namespace ducks {
                 break;
             case 7 : theMovement = EMovement::MOVE_DOWN_RIGHT;
                 break;
-            default: theMovement = EMovement::COUNT_MOVE;
+            default: theMovement = EMovement::MOVE_DEAD;
                 break;
         }
         return theMovement;
@@ -278,54 +315,5 @@ namespace ducks {
         }
 
         return result;
-    }//----- End of method
-
-    void Model::reset()
-    {
-
-    }//----- End of method
-
-    void Model::train()
-    {
-        for (size_t cursor = 0; cursor < observations.size(); cursor++)
-        {
-            modelsHolder[cursor] = hmm.correctModel(modelsHolder[cursor], observations[cursor]);
-        }
-    }//----- End of method
-
-    void Model::resetRound()
-    {
-
-    }//----- End of method
-
-    void Model::initializeRound(size_t numberOfBirds)
-    {
-        std::vector<std::vector<double>> DEFAULT_A =
-                {{0.6, 0.1, 0.1, 0.1, 0.1},
-                 {0.1, 0.6, 0.1, 0.1, 0.1},
-                 {0.1, 0.1, 0.6, 0.1, 0.1},
-                 {0.1, 0.1, 0.1, 0.6, 0.1},
-                 {0.1, 0.1, 0.1, 0.1, 0.6}};
-
-        std::vector<std::vector<double>> DEFAULT_B =
-                {{0.125, 0.125, 0.125, 0.125, 0.11, 0.11, 0.11, 0.11, 0.06},
-                 {0.02,  0.02,  0.02,  0.02,  0.43, 0.43, 0.02, 0.02, 0.02},
-                 {0.02,  0.02,  0.02,  0.02,  0.43, 0.43, 0.02, 0.02, 0.02},
-                 {0.2,   0.2,   0.2,   0.2,   0.04, 0.04, 0.04, 0.04, 0.04},
-                 {0.125, 0.12,  0.13,  0.12,  0.13, 0.12, 0.13, 0.12, 0.05}};
-
-        std::vector<double> DEFAULT_PI = {0.4, 0.1, 0.3, 0.1, 0.1};
-
-        observations = std::vector<std::vector<int> > (numberOfBirds, std::vector<int>(0));
-        std::cerr << "initilize round";
-        modelsHolder = std::vector<ModelHolder>(numberOfBirds);
-
-        for (size_t cursor = 0; cursor < observations.size(); cursor++)
-        {
-            modelsHolder[cursor].A = DEFAULT_A;
-            modelsHolder[cursor].B = DEFAULT_B;
-            modelsHolder[cursor].Pi = DEFAULT_PI;
-
-        }
     }//----- End of method
 }
