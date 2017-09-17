@@ -21,22 +21,33 @@ namespace ducks {
         {
             return cDontShoot;
         }
-        if (pState.getRound() == 0)
+
+        if (pState.getBird(0).getSeqLength() == MINIMUM_STEP)
         {
+            modelsHolder = {};
             for (int i=0; i < pState.getNumBirds(); i++)
             {
                 Bird theBird = pState.getBird(i);
                 if (theBird.isAlive())
                 {
                     std::vector<EMovement> observations = buildVectorOfMovement(theBird);
-
+                    modelsHolder.push_back(model.trainMovementsPredictor(observations));
                 }
             }
         }
-        else
+        /**for (int i=0; i < pState.getNumBirds(); i++)
         {
+            Bird theBird = pState.getBird(i);
+            if (theBird.isAlive())
+            {
+                EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
 
-        }
+                if (prediction != EMovement::MOVE_DEAD)
+                {
+                    return Action(i, prediction);
+                }
+            }
+        }**/
         //This line would predict that bird 0 will move right and shoot at it
         return cDontShoot;
     }
@@ -61,6 +72,9 @@ namespace ducks {
                 pastGuess = lGuesses;
             }
         }**/
+
+        std::cerr << "ROUND !" << std::endl;
+
         return lGuesses;
     }
 

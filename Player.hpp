@@ -80,11 +80,9 @@ private:
     std::vector<EMovement> buildVectorOfMovement(Bird aBird);
 
 
-    std::map<ESpecies, std::vector<std::vector<EMovement>> > pastObservations = {};
     Model model;
-    std::vector <ESpecies> pastGuess;
 
-    int turn=0;
+    std::vector<ModelHolder> modelsHolder;
 };
 
 } /*namespace ducks*/

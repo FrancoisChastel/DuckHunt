@@ -152,14 +152,6 @@ namespace ducks {
 
     ModelHolder Model::trainMovementsPredictor(std::vector<EMovement> observations)
     {
-
-            if (bestLocalShootProb > bestShootProb && bestLocalShoot != Constants.MOVE_RIGHT && bestLocalShoot != Constants.MOVE_LEFT) {
-                if (bestLocalShootProb >= ThresholdShootProb) {
-                    bestShootProb = bestLocalShootProb;
-                    bestShoot = bestLocalShoot;
-                    idBirdToShoot = idBird;
-                }
-            }
         ModelHolder modelHolder;
 
         std::vector<std::vector<double>> DEFAULT_A =
@@ -182,11 +174,6 @@ namespace ducks {
         modelHolder.A = DEFAULT_A;
         modelHolder.B = DEFAULT_B;
         modelHolder.Pi = DEFAULT_PI;
-        modelHolder = hmm.correctModel(modelHolder, movementsToInts(observations));
-        int nextMove = hmm.predictNextMove(modelHolder, hmm.findGamma(modelHolder.A.size(),  hmm.AlphaPass1(modelHolder, observations)));
-
-        //TODO : double[] nextObsDist = newHMMOfBirdSpecies.NextObsDistribution(currentPi_t);
-
 
         return hmm.correctModel(modelHolder, movementsToInts(observations));
     }//----- End of method
