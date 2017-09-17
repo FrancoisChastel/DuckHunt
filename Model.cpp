@@ -183,8 +183,9 @@ namespace ducks {
    {
        std::vector<int> observation = movementsToInts(anObservation);
        int tmp_prediction = -1;
-       std::vector<double> gamma = hmm.findGamma(aModel.A.size(), hmm.AlphaPass1(aModel, observation));
-       tmp_prediction = hmm.predictNextMove(aModel, gamma, observation.size());
+       std::vector<double> alpha =  hmm.AlphaPass1(aModel, observation);
+       //std::vector<double> gamma = hmm.findGamma(aModel.A.size(), alpha);
+       //tmp_prediction = hmm.predictNextMove(aModel, gamma, observation.size());
 
        if (tmp_prediction != -1)
        {

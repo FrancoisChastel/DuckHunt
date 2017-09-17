@@ -35,19 +35,20 @@ namespace ducks {
                 }
             }
         }
-        /**for (int i=0; i < pState.getNumBirds(); i++)
+        for (int i=0; i < pState.getNumBirds(); i++)
         {
             Bird theBird = pState.getBird(i);
             if (theBird.isAlive())
             {
                 EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
 
+                prediction = EMovement::MOVE_DEAD;
                 if (prediction != EMovement::MOVE_DEAD)
                 {
                     return Action(i, prediction);
                 }
             }
-        }**/
+        }
         //This line would predict that bird 0 will move right and shoot at it
         return cDontShoot;
     }
