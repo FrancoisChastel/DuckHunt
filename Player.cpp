@@ -15,7 +15,8 @@ namespace ducks {
          * Here you should write your clever algorithms to get the best action.
          * This skeleton never shoots.
          */
-        int MINIMUM_STEP = 80;
+
+        int MINIMUM_STEP = 99-(pState.getNumBirds()*2);
         if (pState.getNumBirds() == 0)
             return cDontShoot;
 
@@ -36,21 +37,32 @@ namespace ducks {
                         modelsHolder[i] = modelHolder;
                     }
                 }
+
             }
+
             for (int i = 0; i < pState.getNumBirds(); i++) {
+
                 Bird theBird = pState.getBird(i);
                 if (theBird.isAlive()) {
+                    if(lastShot==i)
+                    {
+                        std::vector<EMovement> observations = buildVectorOfMovement(theBird);
+                        ModelHolder *modelHolder = new ModelHolder();
+                        model.trainMovementsPredictor(modelHolder, observations);
+                        modelsHolder[i] = modelHolder;
+                    }
+                    std::cerr << "bird: "<< i << "\n";
                     EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
-
-                    if (prediction != EMovement::MOVE_DEAD) {
+                    if (prediction != EMovement::MOVE_DEAD && prediction != EMovement::MOVE_LEFT && prediction != EMovement::MOVE_RIGHT) {
+                        lastShot=i;
                         return Action(i, prediction);
                     }
                 }
             }
         }
-
-        //This line would predict that bird 0 will move right and shoot at it
         return cDontShoot;
+
+
     }
 
     std::vector <ESpecies> Player::guess(const GameState &pState, const Deadline &pDue) {
@@ -59,10 +71,10 @@ namespace ducks {
          * Here you should write your clever algorithms to guess the species of each bird.
          * This skeleton makes no guesses, better safe than sorry!
          */
-        ESpecies DEFAULT_BIRD = SPECIES_UNKNOWN;
+        ESpecies DEFAULT_BIRD = SPECIES_PIGEON;
 
         std::vector <ESpecies> lGuesses(pState.getNumBirds(), DEFAULT_BIRD);
-        /**
+
         if(pState.getRound() != 0)
         {
             for (int i=0; i < pState.getNumBirds(); i++)
@@ -72,9 +84,7 @@ namespace ducks {
                 lGuesses[i] = model.guessSpeciesPredictor(movements);
                 pastGuess = lGuesses;
             }
-        }**/
-
-        std::cerr << "ROUND !" << std::endl;
+        }
 
         return lGuesses;
     }
@@ -90,7 +100,7 @@ namespace ducks {
         /*
          * If you made any guesses, you will find out the true species of those birds in this function.
          */
-        /**
+
         std::map<ESpecies, std::vector<std::vector<EMovement>> > classifiedObservations = pastObservations;
 
         for (int i = 0; i < pState.getNumBirds(); i++) {
@@ -110,7 +120,6 @@ namespace ducks {
         model.trainSpeciesPredictor(classifiedObservations);
 
         printGuess(this->pastGuess, pSpecies);
-         **/
 
     }
 

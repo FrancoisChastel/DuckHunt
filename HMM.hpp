@@ -272,9 +272,13 @@ namespace ducks {
                     nextMove = i;
                 }
             }
-
-            return nextMove;
-
+            if(maxProb>0.8)
+            {
+                std::cerr<<"SHOOT!!!\n\n";
+                std::cerr <<"confidence: "<< maxProb << std::endl;
+                return nextMove;
+            }
+            else return -1;
         }
 
         // HMM2

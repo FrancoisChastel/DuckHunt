@@ -82,7 +82,11 @@ private:
 
     Model model;
 
+    std::map<ESpecies, std::vector<std::vector<EMovement>> > pastObservations;
+    std::vector <ESpecies> pastGuess;
+
     std::vector<ModelHolder*> modelsHolder;
+    int lastShot=-1;
 };
 
 } /*namespace ducks*/
