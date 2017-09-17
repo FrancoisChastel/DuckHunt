@@ -30,7 +30,7 @@ namespace ducks {
 
     public:
 //------------------------------------------------------- Publics methods
-        EMovement guessMovement(ModelHolder model, std::vector<EMovement> observation);
+        EMovement guessMovement(ModelHolder* model, std::vector<EMovement> observation);
         // Parameters :
         //
         // Manual :
@@ -38,7 +38,7 @@ namespace ducks {
         // Contract :
         //
 
-        ModelHolder trainMovementsPredictor(std::vector<EMovement> observations);
+        void trainMovementsPredictor(ModelHolder* modelHolder, std::vector<EMovement> observations);
         // Parameters :
         //
         // Manual :
@@ -87,7 +87,7 @@ namespace ducks {
         // Contract :
         //
 
-        void PrintMatrix(std::vector<std::vector<int>> aMatrix);
+        void PrintMatrix(std::vector<std::vector<double>> aMatrix);
 
 
         void reset();

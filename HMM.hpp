@@ -165,7 +165,7 @@ namespace ducks {
          * Duck movement part
          */
 
-        std::vector<double> AlphaPass1(ModelHolder anHolder, std::vector<int> observations)
+        std::vector<double> AlphaPass1(ModelHolder* anHolder, std::vector<int> observations)
         // Parameters :
         //
         // Manual :
@@ -173,8 +173,8 @@ namespace ducks {
         // Contract :
         //
         {
-            int aNumberOfStates = anHolder.A.size();
-            int aNumberOfEmissions = anHolder.B[0].size();
+            int aNumberOfStates = anHolder->A.size();
+            int aNumberOfEmissions = anHolder->B[0].size();
             int aNumberOfObservations = observations.size();
             std::vector<double> c(aNumberOfObservations, 0);
             std::vector <std::vector <double> > alpha(aNumberOfStates, std::vector<double> (aNumberOfObservations, 0));
@@ -183,7 +183,7 @@ namespace ducks {
             c[0]=0;
             for(int i=0; i<aNumberOfStates; i++)
             {
-                alpha[i][0] = anHolder.Pi[i] * anHolder.B[i][observations[0]];
+                alpha[i][0] = anHolder->Pi[i] * anHolder->B[i][observations[0]];
                 c[0]+=alpha[i][0];
             }
             c[0]=1/c[0];
@@ -199,9 +199,9 @@ namespace ducks {
                     alpha[i][t]=0;
                     for(int j=0; j<aNumberOfStates; j++)
                     {
-                        alpha[i][t] += alpha[j][t-1]* anHolder.A[j][i];
+                        alpha[i][t] += alpha[j][t-1]* anHolder->A[j][i];
                     }
-                    alpha[i][t] *= anHolder.B[i][observations[t]];
+                    alpha[i][t] *= anHolder->B[i][observations[t]];
                     c[t]+=alpha[i][t];
                 }
                 c[t]=1/c[t];
@@ -234,7 +234,7 @@ namespace ducks {
         }
 
         // HMMO
-        int predictNextMove(ModelHolder anHolder, std::vector<double> gamma, int numberOfObservations)
+        void predictNextMove(ModelHolder* anHolder, std::vector<double> gamma, int numberOfObservations, int* nextMove)
         // Parameters :
         //
         // Manual :
@@ -242,38 +242,39 @@ namespace ducks {
         // Contract :
         //
         {
-            std::vector<double> PMove (anHolder.A.size());
-            std::vector<double> PStates(anHolder.A.size());
+            std::vector<double> PMove (anHolder->A.size());
+            std::vector<double> PStates(anHolder->A.size());
 
-            for (int i = 0; i < anHolder.A.size(); i++)
+            std::cerr << "A1" << std::endl;
+            for (int i = 0; i < anHolder->A.size(); i++)
             {
                 PStates[i] = 0;
 
-                for (int j = 0; j < anHolder.A.size(); j++)
+                for (int j = 0; j < anHolder->A.size(); j++)
                 {
-                    PStates[i] += gamma[j] * anHolder.A[j][i];
+                    PStates[i] += gamma[j] * anHolder->A[j][i];
                 }
             }
             double maxProb = 0.8;
-            int nextMove = -1;
+            std::cerr << "A2" << std::endl;
 
-            for (int i = 0; i < anHolder.B[0].size(); i++)
+            for (int i = 0; i < anHolder->B[0].size(); i++)
             {
                 PMove[i] = 0;
 
-                for (int j = 0; j < anHolder.A.size(); j++)
+                for (int j = 0; j < anHolder->A.size(); j++)
                 {
-                    PMove[i] += PStates[j] * anHolder.B[j][i];
+                    PMove[i] += PStates[j] * anHolder->B[j][i];
                 }
 
                 if (PMove[i] > maxProb)
                 {
                     maxProb = PMove[i];
-                    nextMove = i;
+                    *nextMove = i;
                 }
             }
+            std::cerr << "A3" << std::endl;
 
-            return nextMove;
         }
 
         // HMM2
@@ -363,7 +364,7 @@ namespace ducks {
         }
 
         // HMM4
-        ModelHolder correctModel(ModelHolder anHolder, std::vector<int> observations)
+        void correctModel(ModelHolder* anHolder, std::vector<int> observations)
         // Parameters :
         //
         // Manual :
@@ -371,8 +372,8 @@ namespace ducks {
         // Contract :
         //
         {
-            int aNumberOfStates = anHolder.A.size();
-            int aNumberOfEmissions = anHolder.B[0].size();
+            int aNumberOfStates = anHolder->A.size();
+            int aNumberOfEmissions = anHolder->B[0].size();
             int aNumberOfObservations = observations.size();
 
 
@@ -398,7 +399,7 @@ namespace ducks {
                 c[0]=0;
                 for(int i=0; i<aNumberOfStates; i++)
                 {
-                    alpha[i][0] = anHolder.Pi[i] * anHolder.B[i][observations[0]];
+                    alpha[i][0] = anHolder->Pi[i] * anHolder->B[i][observations[0]];
                     c[0]+=alpha[i][0];
                 }
                 c[0]=1/c[0];
@@ -414,9 +415,9 @@ namespace ducks {
                         alpha[i][t]=0;
                         for(int j=0; j<aNumberOfStates; j++)
                         {
-                            alpha[i][t] += alpha[j][t-1]* anHolder.A[j][i];
+                            alpha[i][t] += alpha[j][t-1]* anHolder->A[j][i];
                         }
-                        alpha[i][t] *= anHolder.B[i][observations[t]];
+                        alpha[i][t] *= anHolder->B[i][observations[t]];
                         c[t]+=alpha[i][t];
                     }
                     c[t]=1/c[t];
@@ -439,7 +440,7 @@ namespace ducks {
                         beta[i][t]=0;
                         for(int j=0; j<aNumberOfStates; j++)
                         {
-                            beta[i][t]+=(anHolder.A[i][j]*anHolder.B[j][observations[t+1]]*beta[j][t+1]);
+                            beta[i][t]+=(anHolder->A[i][j]*anHolder->B[j][observations[t+1]]*beta[j][t+1]);
                         }
                         beta[i][t]=c[t]*beta[i][t];
                     }
@@ -453,7 +454,7 @@ namespace ducks {
                     {
                         for(int j=0; j<aNumberOfStates; j++)
                         {
-                            denom=denom+alpha[i][t]* anHolder.A[i][j] * anHolder.B[j][observations[t+1]]*beta[j][t+1];
+                            denom=denom+alpha[i][t]* anHolder->A[i][j] * anHolder->B[j][observations[t+1]]*beta[j][t+1];
                         }
                     }
                     for(int i=0; i<aNumberOfStates; i++)
@@ -461,7 +462,7 @@ namespace ducks {
                         gamma[i][t]=0;
                         for(int j=0; j<aNumberOfStates; j++)
                         {
-                            digamma[i][j][t]=(alpha[i][t]*anHolder.A[i][j]*anHolder.B[j][observations[t+1]]*beta[j][t+1])/denom;
+                            digamma[i][j][t]=(alpha[i][t]*anHolder->A[i][j]*anHolder->B[j][observations[t+1]]*beta[j][t+1])/denom;
                             gamma[i][t]+=digamma[i][j][t];
                         }
                     }
@@ -480,7 +481,7 @@ namespace ducks {
                 // New PI
                 for(int i=0; i<aNumberOfStates; i++)
                 {
-                    anHolder.Pi[i] = gamma[i][0];
+                    anHolder->Pi[i] = gamma[i][0];
                 }
 
                 // New A
@@ -495,7 +496,7 @@ namespace ducks {
                             numer=numer+digamma[i][j][t];
                             denom=denom+gamma[i][t];
                         }
-                        anHolder.A[i][j]=numer/denom;
+                        anHolder->A[i][j]=numer/denom;
                     }
                 }
 
@@ -514,7 +515,7 @@ namespace ducks {
                             }
                             denom=denom+gamma[i][t];
                         }
-                        anHolder.B[i][j]=numer/denom;
+                        anHolder->B[i][j]=numer/denom;
                     }
                 }
 
@@ -536,8 +537,6 @@ namespace ducks {
                 }
 
             }
-
-            return anHolder;
         }
 
 

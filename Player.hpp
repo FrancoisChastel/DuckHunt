@@ -82,7 +82,7 @@ private:
 
     Model model;
 
-    std::vector<ModelHolder> modelsHolder;
+    std::vector<ModelHolder*> modelsHolder;
 };
 
 } /*namespace ducks*/

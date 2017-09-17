@@ -71,7 +71,7 @@ namespace ducks {
         return std::pair<double,EMovement> (0, intToMovement(0));
     }//----- End of method
 
-    void Model::PrintMatrix(std::vector<std::vector<int>> aMatrix)
+    void Model::PrintMatrix(std::vector<std::vector<double>> aMatrix)
     {
         for (int theCursorX = 0; theCursorX < aMatrix.size(); theCursorX++)
         {
@@ -150,9 +150,8 @@ namespace ducks {
     }//----- End of method
 
 
-    ModelHolder Model::trainMovementsPredictor(std::vector<EMovement> observations)
+    void Model::trainMovementsPredictor(ModelHolder* modelHolder, std::vector<EMovement> observations)
     {
-        ModelHolder modelHolder;
 
         std::vector<std::vector<double>> DEFAULT_A =
                 {{0.6, 0.1, 0.1, 0.1, 0.1},
@@ -171,21 +170,25 @@ namespace ducks {
         std::vector<double> DEFAULT_PI = {0.4, 0.1, 0.3, 0.1, 0.1};
 
 
-        modelHolder.A = DEFAULT_A;
-        modelHolder.B = DEFAULT_B;
-        modelHolder.Pi = DEFAULT_PI;
+        modelHolder->A = DEFAULT_A;
+        modelHolder->B = DEFAULT_B;
+        modelHolder->Pi = DEFAULT_PI;
 
-        return hmm.correctModel(modelHolder, movementsToInts(observations));
+        hmm.correctModel(modelHolder, movementsToInts(observations));
     }//----- End of method
 
 
-   EMovement Model::guessMovement(ModelHolder aModel, std::vector<EMovement> anObservation)
+   EMovement Model::guessMovement(ModelHolder* aModel, std::vector<EMovement> anObservation)
    {
        std::vector<int> observation = movementsToInts(anObservation);
        int tmp_prediction = -1;
        std::vector<double> alpha =  hmm.AlphaPass1(aModel, observation);
-       //std::vector<double> gamma = hmm.findGamma(aModel.A.size(), alpha);
-       //tmp_prediction = hmm.predictNextMove(aModel, gamma, observation.size());
+       std::vector<double> gamma = hmm.findGamma(aModel->A.size(), alpha);
+       std::cerr << "Bonjour bonjour " << std::endl;
+       hmm.predictNextMove(aModel, gamma, observation.size(), &tmp_prediction);
+       std::cerr << "Bonjour bonsoir " << std::endl;
+
+       std::cerr << tmp_prediction << std::endl;
 
        if (tmp_prediction != -1)
        {

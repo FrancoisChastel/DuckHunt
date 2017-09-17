@@ -15,40 +15,41 @@ namespace ducks {
          * Here you should write your clever algorithms to get the best action.
          * This skeleton never shoots.
          */
-        int MINIMUM_STEP = 80;
+        int MINIMUM_STEP = 97;
+        if (pState.getNumBirds() == 0)
+            return cDontShoot;
 
         if (pState.getBird(0).getSeqLength() < MINIMUM_STEP)
         {
             return cDontShoot;
         }
+        else {
+            if (pState.getBird(0).getSeqLength() == MINIMUM_STEP) {
+                modelsHolder = std::vector<ModelHolder*>(pState.getNumBirds(), NULL);
 
-        if (pState.getBird(0).getSeqLength() == MINIMUM_STEP)
-        {
-            modelsHolder = {};
-            for (int i=0; i < pState.getNumBirds(); i++)
-            {
+                for (int i = 0; i < pState.getNumBirds(); i++) {
+                    Bird theBird = pState.getBird(i);
+                    if (theBird.isAlive()) {
+                        std::vector<EMovement> observations = buildVectorOfMovement(theBird);
+                        ModelHolder *modelHolder = new ModelHolder();
+                        model.trainMovementsPredictor(modelHolder, observations);
+                        modelsHolder[i] = modelHolder;
+                    }
+                }
+            }
+            for (int i = 0; i < pState.getNumBirds(); i++) {
                 Bird theBird = pState.getBird(i);
-                if (theBird.isAlive())
-                {
-                    std::vector<EMovement> observations = buildVectorOfMovement(theBird);
-                    modelsHolder.push_back(model.trainMovementsPredictor(observations));
-                }
-            }
-        }
-        for (int i=0; i < pState.getNumBirds(); i++)
-        {
-            Bird theBird = pState.getBird(i);
-            if (theBird.isAlive())
-            {
-                EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
+                if (theBird.isAlive()) {
+                    EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
+                    std::cerr << "Bonsoir la famille "<< std::endl;
 
-                prediction = EMovement::MOVE_DEAD;
-                if (prediction != EMovement::MOVE_DEAD)
-                {
-                    return Action(i, prediction);
+                    if (prediction != EMovement::MOVE_DEAD) {
+                        return Action(i, prediction);
+                    }
                 }
             }
         }
+
         //This line would predict that bird 0 will move right and shoot at it
         return cDontShoot;
     }
