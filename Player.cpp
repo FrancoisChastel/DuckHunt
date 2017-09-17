@@ -25,40 +25,45 @@ namespace ducks {
             return cDontShoot;
         }
         else {
-            if (pState.getBird(0).getSeqLength() == MINIMUM_STEP) {
-                modelsHolder = std::vector<ModelHolder*>(pState.getNumBirds(), NULL);
+            if (pState.getRound() != 0)
+            {
+                if (pState.getBird(0).getSeqLength() == MINIMUM_STEP) {
+                    modelsHolder = std::vector<ModelHolder*>(pState.getNumBirds(), NULL);
+
+                    for (int i = 0; i < pState.getNumBirds(); i++) {
+                        Bird theBird = pState.getBird(i);
+                        if (theBird.isAlive()) {
+                            std::vector<EMovement> observations = buildVectorOfMovement(theBird);
+                            ModelHolder *modelHolder = new ModelHolder();
+                            model.trainMovementsPredictor(modelHolder, observations);
+                            modelsHolder[i] = modelHolder;
+                        }
+                    }
+
+                }
 
                 for (int i = 0; i < pState.getNumBirds(); i++) {
+
                     Bird theBird = pState.getBird(i);
                     if (theBird.isAlive()) {
-                        std::vector<EMovement> observations = buildVectorOfMovement(theBird);
-                        ModelHolder *modelHolder = new ModelHolder();
-                        model.trainMovementsPredictor(modelHolder, observations);
-                        modelsHolder[i] = modelHolder;
-                    }
-                }
-
-            }
-
-            for (int i = 0; i < pState.getNumBirds(); i++) {
-
-                Bird theBird = pState.getBird(i);
-                if (theBird.isAlive()) {
-                    if(lastShot==i)
-                    {
-                        std::vector<EMovement> observations = buildVectorOfMovement(theBird);
-                        ModelHolder *modelHolder = new ModelHolder();
-                        model.trainMovementsPredictor(modelHolder, observations);
-                        modelsHolder[i] = modelHolder;
-                    }
-                    std::cerr << "bird: "<< i << "\n";
-                    EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
-                    if (prediction != EMovement::MOVE_DEAD && prediction != EMovement::MOVE_LEFT && prediction != EMovement::MOVE_RIGHT) {
-                        lastShot=i;
-                        return Action(i, prediction);
+                        if(lastShot==i)
+                        {
+                            std::vector<EMovement> observations = buildVectorOfMovement(theBird);
+                            ModelHolder *modelHolder = new ModelHolder();
+                            model.trainMovementsPredictor(modelHolder, observations);
+                            modelsHolder[i] = modelHolder;
+                        }
+                        std::cerr << "bird: "<< i << "\n";
+                        EMovement prediction = model.guessMovement(modelsHolder[i], buildVectorOfMovement(theBird));
+                        ESpecies predictionSpecies = model.guessSpeciesPredictor(buildVectorOfMovement(theBird));
+                        if (prediction != EMovement::MOVE_DEAD) {
+                            lastShot=i;
+                            return Action(i, prediction);
+                        }
                     }
                 }
             }
+
         }
         return cDontShoot;
 
