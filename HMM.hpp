@@ -254,7 +254,7 @@ namespace ducks {
                     PStates[i] += gamma[j] * anHolder->A[j][i];
                 }
             }
-            double maxProb = 0.25;
+            double maxProb = 0;
             int nextMove = -1;
 
             for (int i = 0; i < anHolder->B[0].size(); i++)
@@ -265,8 +265,6 @@ namespace ducks {
                 {
                     PMove[i] += PStates[j] * anHolder->B[j][i];
                 }
-
-                std::cerr << PMove[i] << " probility for " << i << std::endl;
 
                 if (PMove[i] > maxProb)
                 {
